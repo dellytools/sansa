@@ -20,14 +20,43 @@
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
+#include "parsedb.h"
+
+
 namespace sansa
 {
 
   struct AnnotateConfig {
-    boost::filesystem::path genome;
+    bool hasDumpFile;
+    boost::filesystem::path dumpfile;
+    boost::filesystem::path db;
     boost::filesystem::path outfile;
+    boost::filesystem::path infile;
   };
 
+
+  template<typename TConfig>
+  inline int32_t
+  runAnnotate(TConfig& c) {
+    
+#ifdef PROFILE
+    ProfilerStart("sansa.prof");
+#endif
+
+    // Parse DB
+    if (!parseDB(c)) {
+      std::cerr << "Sansa couldn't parse database!" << std::endl;
+      return 1;
+    }
+
+    // End
+    boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Done." << std::endl;
+    return 0;
+  }
+
+
+  
   int annotate(int argc, char** argv) {
     AnnotateConfig c;
   
@@ -35,12 +64,14 @@ namespace sansa
     boost::program_options::options_description generic("Generic options");
     generic.add_options()
       ("help,?", "show help message")
+      ("anno,a", boost::program_options::value<boost::filesystem::path>(&c.db)->default_value("annotation.bcf"), "annotation database VCF/BCF file")
+      ("dump,d", boost::program_options::value<boost::filesystem::path>(&c.dumpfile), "gzipped output file for DB SVs")
       ("output,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("test.tsv"), "output file")
       ;
     
     boost::program_options::options_description hidden("Hidden options");
     hidden.add_options()
-      ("input-file", boost::program_options::value<boost::filesystem::path>(&c.genome), "input VCF/BCF file")
+      ("input-file", boost::program_options::value<boost::filesystem::path>(&c.infile), "input VCF/BCF file")
       ;
     
     boost::program_options::positional_options_description pos_args;
@@ -60,6 +91,10 @@ namespace sansa
       std::cout << visible_options << "\n";
       return -1;
     }
+
+    // Dump DB
+    if (vm.count("dump")) c.hasDumpFile = true;
+    else c.hasDumpFile = false;
     
     // Show cmd
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
@@ -68,7 +103,7 @@ namespace sansa
     for(int i=0; i<argc; ++i) { std::cout << argv[i] << ' '; }
     std::cout << std::endl;
     
-    return 0;
+    return runAnnotate(c);
   }
 
 }

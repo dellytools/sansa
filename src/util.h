@@ -18,6 +18,29 @@ namespace sansa
   #ifndef DELLY_SVT_TRANS
   #define DELLY_SVT_TRANS 5
   #endif
+
+
+  // Structural variant record
+  struct StructuralVariantRecord {
+    int32_t chr;
+    int32_t svStart;
+    int32_t chr2;
+    int32_t svEnd;
+    int32_t svt;
+    int32_t id;
+    
+    StructuralVariantRecord() : chr(0), svStart(0), chr2(0), svEnd(0), svt(-1), id(-1) {}
+  };
+
+  
+  template<typename TSV>
+  struct SortSVs : public std::binary_function<TSV, TSV, bool>
+  {
+    inline bool operator()(TSV const& sv1, TSV const& sv2) {
+      return ((sv1.chr<sv2.chr) || ((sv1.chr==sv2.chr) && (sv1.svStart<sv2.svStart)) || ((sv1.chr==sv2.chr) && (sv1.svStart==sv2.svStart) && (sv1.chr2<sv2.chr2)) || ((sv1.chr==sv2.chr) && (sv1.svStart==sv2.svStart) && (sv1.chr2==sv2.chr2) && (sv1.svEnd<sv2.svEnd)) || ((sv1.chr==sv2.chr) && (sv1.svStart==sv2.svStart) && (sv1.chr2==sv2.chr2) && (sv1.svEnd==sv2.svEnd) && (sv1.id < sv2.id)));
+    }
+  };
+
   
   inline int32_t
     _decodeOrientation(std::string const& value) {

@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
     return 0;
   }
   else if ((std::string(argv[1]) == "annotate")) {
-    //return index(argc-1,argv+1);
+    return annotate(argc-1,argv+1);
   } else {
     std::cerr << "Unrecognized command " << std::string(argv[1]) << std::endl;
     return 1;
