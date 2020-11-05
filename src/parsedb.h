@@ -55,9 +55,9 @@ namespace sansa
   }
   
 
-  template<typename TConfig, typename TMap>
+  template<typename TConfig, typename TSV, typename TMap>
   inline bool
-  parseDB(TConfig const& c, TMap& chrMap) {
+  parseDB(TConfig& c, TSV& svs, TMap& chrMap) {
 
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Parse annotation database" << std::endl;
@@ -104,14 +104,31 @@ namespace sansa
     if (c.hasDumpFile) {
       dumpOut.push(boost::iostreams::gzip_compressor());
       dumpOut.push(boost::iostreams::file_sink(c.dumpfile.string().c_str(), std::ios_base::out | std::ios_base::binary));
-      dumpOut << "chr\tstart\tchr2\tend\tid\tqual\tpass\tsvtype\tct\tsvlen" << std::endl;
+      dumpOut << "intid\tchr\tstart\tchr2\tend\tid\tqual\tpass\tsvtype\tct\tsvlen\tparsed" << std::endl;
     }
 
+    // Temporary chr2 map until we have seen all chromosomes
+    typedef std::map<std::string, int32_t> TChr2Map;
+    TChr2Map chr2Map;
+    
     // Parse VCF records
     bcf1_t* rec = bcf_init();
-    uint32_t siteCount = 0;
+    int32_t svid = 0;
+    int32_t sitecount = 0;
     int32_t lastRID = -1;
     while (bcf_read(ifile, hdr, rec) == 0) {
+      // Defaults
+      std::string svtval = "NA";
+      bool endPresent = false;
+      bool pos2Present = false;
+      int32_t endsv = -1;
+      int32_t startsv = rec->pos + 1;
+      int32_t svlength = -1;
+      bool parsed = true;
+
+      // Count records
+      ++sitecount;
+      
       // Augment chromosome map
       if (rec->rid != lastRID) {
 	lastRID = rec->rid;
@@ -120,46 +137,60 @@ namespace sansa
       }
 
       // Only bi-allelic
-      if (rec->n_allele != 2) continue;
+      if (rec->n_allele != 2) parsed = false;
 
-      // Defaults
-      bool endPresent = false;
-      bool pos2Present = false;
-      int32_t endsv = -1;
-      int32_t svlength = -1;
-      
+      // Unpack INFO
       bcf_unpack(rec, BCF_UN_INFO);
+
+      // SVTYPE
       if (_isKeyPresent(hdr, "SVTYPE")) {
 	if (bcf_get_info_string(hdr, rec, "SVTYPE", &svt, &nsvt) > 0) {
-	  // Nop
-	} else continue;
+	  svtval = std::string(svt);
+	} else {
+	  parsed = false;
+	}
       }
 
-      ++siteCount;
+      // CT
       std::string ctval("NA");
       if (_isKeyPresent(hdr, "CT")) {
-	if (bcf_get_info_string(hdr, rec, "CT", &ct, &nct) > 0) ctval = std::string(ct);
+	if (bcf_get_info_string(hdr, rec, "CT", &ct, &nct) > 0) {
+	  ctval = std::string(ct);
+	  c.hasCT = true;
+	}
       }
+
+      // PASS?
       bool passSite = (bcf_has_filter(hdr, rec, const_cast<char*>("PASS"))==1);
+
+      // CHR2
       std::string chr2Name(bcf_hdr_id2name(hdr, rec->rid));
       if (_isKeyPresent(hdr, "CHR2")) {
 	if (bcf_get_info_string(hdr, rec, "CHR2", &chr2, &nchr2) > 0) chr2Name = std::string(chr2);
       }
+
+      // POS2
       if (_isKeyPresent(hdr, "POS2")) {
 	if (bcf_get_info_int32(hdr, rec, "POS2", &pos2, &npos2) > 0) {
 	  pos2Present = true;
 	}
       }
+
+      // SVLEN
       if (_isKeyPresent(hdr, "SVLEN")) {
 	if (bcf_get_info_int32(hdr, rec, "SVLEN", &svlen, &nsvlen) > 0) {
 	  svlength = *svlen;
 	}
       }
+
+      // END
       if (_isKeyPresent(hdr, "END")) {
 	if (bcf_get_info_int32(hdr, rec, "END", &svend, &nsvend) > 0) {
 	  endPresent = true;
 	}
       }
+
+      
       if ((pos2Present) && (endPresent)) {
 	if (std::string(svt) == "BND") {
 	  endsv = *pos2;
@@ -176,11 +207,37 @@ namespace sansa
 	endsv = rec->pos + diff + 2;
       }
 
+      // Numerical SV type
+      int32_t svtint = _decodeOrientation(ctval, std::string(svt));
+      if (svtint == -1) parsed = false;
+      int32_t qualval = (int32_t) (rec->qual);
+
+      // Dump record
       if (c.hasDumpFile) {
-	dumpOut << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" << endsv << "\t" << rec->d.id << "\t" << rec->qual << "\t" << passSite << "\t" << svt << "\t" << ctval << "\t" << svlength << std::endl;
+	dumpOut << svid << "\t" << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" << endsv << "\t" << rec->d.id << "\t" << rec->qual << "\t" << passSite << "\t" << svt << "\t" << ctval << "\t" << svlength << "\t" << parsed << std::endl;
+      }
+
+      // Store SV
+      if (parsed) {
+	if (chr2Map.find(chr2Name) == chr2Map.end()) chr2Map.insert(std::make_pair(chr2Name, chr2Map.size()));
+	svs.push_back(SV(rec->rid, startsv, chr2Map[chr2Name], endsv, svid, qualval, svtint, svlength));
+	++svid;
       }
     }
-  
+
+    // Remap chr names
+    typedef std::map<int32_t, int32_t> TChrIdMap;
+    TChrIdMap chrIdMap;
+    for(typename TChr2Map::iterator itc2 = chr2Map.begin(); itc2 != chr2Map.end(); ++itc2) chrIdMap.insert(std::make_pair(itc2->second, chrMap[itc2->first]));
+    for(uint32_t i = 0; i < svs.size(); ++i) svs[i].chr2 = chrIdMap[svs[i].chr2];
+
+    // Sort SVs
+    sort(svs.begin(), svs.end(), SortSVs<SV>());
+    
+    // Statistics
+    now = boost::posix_time::second_clock::local_time();
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Parsed " << svid << " out of " << sitecount << " VCF/BCF records." << std::endl;
+	
     // Clean-up
     if (svend != NULL) free(svend);
     if (svlen != NULL) free(svlen);
