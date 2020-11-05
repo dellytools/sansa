@@ -27,14 +27,13 @@ namespace sansa
 {
 
   struct AnnotateConfig {
-    bool hasDumpFile;
     bool hasCT;
     bool matchSvType;
     int32_t bpwindow;
     float sizediff;
-    boost::filesystem::path dumpfile;
+    boost::filesystem::path annofile;
     boost::filesystem::path db;
-    boost::filesystem::path outfile;
+    boost::filesystem::path matchfile;
     boost::filesystem::path infile;
   };
 
@@ -86,17 +85,17 @@ namespace sansa
     boost::program_options::options_description generic("Generic options");
     generic.add_options()
       ("help,?", "show help message")
-      ("anno,a", boost::program_options::value<boost::filesystem::path>(&c.db)->default_value("annotation.bcf"), "annotation database VCF/BCF file")
+      ("db,d", boost::program_options::value<boost::filesystem::path>(&c.db)->default_value("database.bcf"), "database VCF/BCF file")
       ("bpoffset,b", boost::program_options::value<int32_t>(&c.bpwindow)->default_value(50), "max. breakpoint offset")
       ("sizediff,s", boost::program_options::value<float>(&c.sizediff)->default_value(0.8), "min. size ratio smaller SV to larger SV")
-      ("dump,d", boost::program_options::value<boost::filesystem::path>(&c.dumpfile), "gzipped output file for DB SVs")
-      ("output,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("out.tsv.gz"), "gzipped output file")
+      ("anno,a", boost::program_options::value<boost::filesystem::path>(&c.annofile)->default_value("anno.tsv.gz"), "gzipped output file for database SVs")
+      ("output,o", boost::program_options::value<boost::filesystem::path>(&c.matchfile)->default_value("query.tsv.gz"), "gzipped output file for query SVs")
       ("notype,n", "Do not require matching SV types")
       ;
     
     boost::program_options::options_description hidden("Hidden options");
     hidden.add_options()
-      ("input-file", boost::program_options::value<boost::filesystem::path>(&c.infile), "input VCF/BCF file")
+      ("input-file", boost::program_options::value<boost::filesystem::path>(&c.infile), "query VCF/BCF file")
       ;
     
     boost::program_options::positional_options_description pos_args;
@@ -116,10 +115,6 @@ namespace sansa
       std::cout << visible_options << "\n";
       return -1;
     }
-
-    // Dump DB
-    if (vm.count("dump")) c.hasDumpFile = true;
-    else c.hasDumpFile = false;
 
     // Match SV types
     if (vm.count("notype")) c.matchSvType = false;

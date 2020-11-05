@@ -85,12 +85,10 @@ namespace sansa
     char* ct = NULL;
     
     // Dump file
-    boost::iostreams::filtering_ostream dumpOut;
-    if (c.hasDumpFile) {
-      dumpOut.push(boost::iostreams::gzip_compressor());
-      dumpOut.push(boost::iostreams::file_sink(c.dumpfile.string().c_str(), std::ios_base::out | std::ios_base::binary));
-      dumpOut << "intid\tchr\tstart\tchr2\tend\tid\tqual\tsvtype\tct\tsvt\tsvlen\tparsed" << std::endl;
-    }
+    boost::iostreams::filtering_ostream annoOut;
+    annoOut.push(boost::iostreams::gzip_compressor());
+    annoOut.push(boost::iostreams::file_sink(c.annofile.string().c_str(), std::ios_base::out | std::ios_base::binary));
+    annoOut << "anno.id\tanno.chr\tanno.start\tanno.chr2\tanno.end\tanno.id\tanno.qual\tanno.svtype\tanno.svlen" << std::endl;
 
     // Temporary chr2 map until we have seen all chromosomes
     typedef std::map<std::string, int32_t> TChr2Map;
@@ -195,14 +193,17 @@ namespace sansa
       int32_t qualval = (int32_t) (rec->qual);
 
       // Dump record
-      if (c.hasDumpFile) {
-	dumpOut << svid << "\t" << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" << endsv << "\t" << rec->d.id << "\t" << qualval << "\t" << svt << "\t" << ctval << "\t" << svtint << "\t" << svlength << "\t" << parsed << std::endl;
-      }
+      //if (!parsed) std::cerr << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" << endsv << "\t" << rec->d.id << "\t" << qualval << "\t" << svt << "\t" << ctval << "\t" << svtint << "\t" << svlength << std::endl;
 
       // Store SV
       if (parsed) {
 	if (chr2Map.find(chr2Name) == chr2Map.end()) chr2Map.insert(std::make_pair(chr2Name, chr2Map.size()));
 	svs.push_back(SV(rec->rid, startsv, chr2Map[chr2Name], endsv, svid, qualval, svtint, svlength));
+	std::string id("id");
+	std::string padNumber = boost::lexical_cast<std::string>(svid);
+	padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
+	id += padNumber;
+	annoOut << id << "\t" << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" << endsv << "\t" << rec->d.id << "\t" << qualval << "\t" << svtval << "\t" << svlength << std::endl;	
 	++svid;
       }
     }
@@ -229,8 +230,8 @@ namespace sansa
     if (ct != NULL) free(ct);
 
     // Close file handles
-    dumpOut.pop();
-    dumpOut.pop();
+    annoOut.pop();
+    annoOut.pop();
     bcf_hdr_destroy(hdr);
     bcf_close(ifile);
     bcf_destroy(rec);

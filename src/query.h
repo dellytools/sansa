@@ -47,9 +47,8 @@ namespace sansa
 
     boost::iostreams::filtering_ostream dataOut;
     dataOut.push(boost::iostreams::gzip_compressor());
-    dataOut.push(boost::iostreams::file_sink(c.outfile.string().c_str(), std::ios_base::out | std::ios_base::binary));
-    dataOut << "query.chr\tquery.start\tquery.chr2\tquery.end\tquery.id\tquery.qual\tquery.svtype\tquery.svlen\t";
-    dataOut << "anno.chr\tanno.start\tanno.chr2\tanno.end\tanno.id\tanno.qual\tanno.svtype\tanno.svlen" << std::endl;
+    dataOut.push(boost::iostreams::file_sink(c.matchfile.string().c_str(), std::ios_base::out | std::ios_base::binary));
+    dataOut << "anno.id\tquery.chr\tquery.start\tquery.chr2\tquery.end\tquery.id\tquery.qual\tquery.svtype\tquery.svlen" << std::endl;
     
     // Parse VCF records
     bcf1_t* rec = bcf_init();
@@ -164,8 +163,11 @@ namespace sansa
 	  if (svlength < itSV->svlen) rat = svlength / itSV->svlen;
 	  if (rat < c.sizediff) continue;
 	}
-	dataOut << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" <<  endsv << "\t" << rec->d.id << "\t" << qualval << "\t" << svtval << "\t" << svlength << "\t";
-	dataOut << bcf_hdr_id2name(hdr, rec->rid) << "\t" << itSV->svStart << "\t" << chr2Name << "\t" <<  itSV->svEnd << "\tINTID_" << itSV->id << "\t" << itSV->qual << "\t" << _addID(itSV->svt) << "\t" << itSV->svlen << std::endl;
+	std::string id("id");
+        std::string padNumber = boost::lexical_cast<std::string>(itSV->id);
+        padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
+        id += padNumber;
+	dataOut << id << "\t" << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" <<  endsv << "\t" << rec->d.id << "\t" << qualval << "\t" << svtval << "\t" << svlength << std::endl;
       }
       
       // Successful parse
