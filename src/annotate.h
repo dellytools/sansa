@@ -43,12 +43,57 @@ namespace sansa
     ProfilerStart("sansa.prof");
 #endif
 
+    // Chromosome map
+    typedef std::map<std::string, int32_t> TChrMap;
+    TChrMap chrMap;
+    
     // Parse DB
-    if (!parseDB(c)) {
+    if (!parseDB(c, chrMap)) {
       std::cerr << "Sansa couldn't parse database!" << std::endl;
       return 1;
     }
 
+    // Take care of 1 vs. chr1, X vs chrX, ...
+    std::vector<std::string> altName(chrMap.size(), "NA");
+    for(TChrMap::iterator itcm = chrMap.begin(); itcm != chrMap.end(); ++itcm) {
+      std::string cn = itcm->first;
+      if (cn.size() == 1) {
+	if (cn == "1") altName[itcm->second] = "chr1";
+	else if (cn == "2") altName[itcm->second] = "chr2";
+	else if (cn == "3") altName[itcm->second] = "chr3";
+	else if (cn == "4") altName[itcm->second] = "chr4";
+	else if (cn == "5") altName[itcm->second] = "chr5";
+	else if (cn == "6") altName[itcm->second] = "chr6";
+	else if (cn == "7") altName[itcm->second] = "chr7";
+	else if (cn == "8") altName[itcm->second] = "chr8";
+	else if (cn == "9") altName[itcm->second] = "chr9";
+	else if (cn == "X") altName[itcm->second] = "chrX";
+	else if (cn == "Y") altName[itcm->second] = "chrY";
+	else if (cn == "M") altName[itcm->second] = "chrM";
+      } else if (cn.size() == 2) {
+	if (cn == "10") altName[itcm->second] = "chr10";
+	else if (cn == "11") altName[itcm->second] = "chr11";
+	else if (cn == "12") altName[itcm->second] = "chr12";
+	else if (cn == "13") altName[itcm->second] = "chr13";
+	else if (cn == "14") altName[itcm->second] = "chr14";
+	else if (cn == "15") altName[itcm->second] = "chr15";
+	else if (cn == "16") altName[itcm->second] = "chr16";
+	else if (cn == "17") altName[itcm->second] = "chr17";
+	else if (cn == "18") altName[itcm->second] = "chr18";
+	else if (cn == "19") altName[itcm->second] = "chr19";
+	else if (cn == "20") altName[itcm->second] = "chr20";
+	else if (cn == "21") altName[itcm->second] = "chr21";
+	else if (cn == "22") altName[itcm->second] = "chr22";
+	else if (cn == "MT") altName[itcm->second] = "chrM";
+      }
+    }
+    for(uint32_t i = 0; i < altName.size(); ++i) {
+      if (altName[i] != "NA") chrMap.insert(std::make_pair(altName[i], i));
+    }
+    for(TChrMap::const_iterator itcm = chrMap.begin(); itcm != chrMap.end(); ++itcm) {
+      std::cerr << itcm->first << '=' << itcm->second << std::endl;
+    }
+	
     // End
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Done." << std::endl;

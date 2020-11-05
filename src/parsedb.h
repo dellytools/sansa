@@ -55,9 +55,13 @@ namespace sansa
   }
   
 
-  template<typename TConfig>
+  template<typename TConfig, typename TMap>
   inline bool
-  parseDB(TConfig const& c) {
+  parseDB(TConfig const& c, TMap& chrMap) {
+
+    boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Parse annotation database" << std::endl;
+    
     // Load bcf file
     htsFile* ifile = bcf_open(c.db.string().c_str(), "r");
     if (ifile == NULL) {
@@ -106,8 +110,17 @@ namespace sansa
     // Parse VCF records
     bcf1_t* rec = bcf_init();
     uint32_t siteCount = 0;
+    int32_t lastRID = -1;
     while (bcf_read(ifile, hdr, rec) == 0) {
-      if (rec->n_allele != 2) continue;  // Only bi-allelic
+      // Augment chromosome map
+      if (rec->rid != lastRID) {
+	lastRID = rec->rid;
+	std::string chrName = bcf_hdr_id2name(hdr, rec->rid);
+	if (chrMap.find(chrName) == chrMap.end()) chrMap.insert(std::make_pair(chrName, rec->rid));
+      }
+
+      // Only bi-allelic
+      if (rec->n_allele != 2) continue;
 
       // Defaults
       bool endPresent = false;
