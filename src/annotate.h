@@ -21,7 +21,7 @@
 #include <boost/progress.hpp>
 
 #include "parsedb.h"
-
+#include "query.h"
 
 namespace sansa
 {
@@ -29,6 +29,9 @@ namespace sansa
   struct AnnotateConfig {
     bool hasDumpFile;
     bool hasCT;
+    bool matchSvType;
+    int32_t bpwindow;
+    float sizediff;
     boost::filesystem::path dumpfile;
     boost::filesystem::path db;
     boost::filesystem::path outfile;
@@ -62,8 +65,11 @@ namespace sansa
     fixChrNames(chrMap);
 
     // Debug chr names
-    for(TChrMap::const_iterator itcm = chrMap.begin(); itcm != chrMap.end(); ++itcm) std::cerr << itcm->first << '=' << itcm->second << std::endl;
-	
+    //for(TChrMap::const_iterator itcm = chrMap.begin(); itcm != chrMap.end(); ++itcm) std::cerr << itcm->first << '=' << itcm->second << std::endl;
+
+    // Query SV
+    query(c, svs, chrMap);
+    
     // End
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Done." << std::endl;
@@ -81,8 +87,11 @@ namespace sansa
     generic.add_options()
       ("help,?", "show help message")
       ("anno,a", boost::program_options::value<boost::filesystem::path>(&c.db)->default_value("annotation.bcf"), "annotation database VCF/BCF file")
+      ("bpoffset,b", boost::program_options::value<int32_t>(&c.bpwindow)->default_value(50), "max. breakpoint offset")
+      ("sizediff,s", boost::program_options::value<float>(&c.sizediff)->default_value(0.8), "min. size ratio smaller SV to larger SV")
       ("dump,d", boost::program_options::value<boost::filesystem::path>(&c.dumpfile), "gzipped output file for DB SVs")
-      ("output,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("test.tsv"), "output file")
+      ("output,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("out.tsv.gz"), "gzipped output file")
+      ("notype,n", "Do not require matching SV types")
       ;
     
     boost::program_options::options_description hidden("Hidden options");
@@ -111,6 +120,14 @@ namespace sansa
     // Dump DB
     if (vm.count("dump")) c.hasDumpFile = true;
     else c.hasDumpFile = false;
+
+    // Match SV types
+    if (vm.count("notype")) c.matchSvType = false;
+    else c.matchSvType = true;
+
+    // Check size ratio
+    if (c.sizediff < 0) c.sizediff = 0;
+    else if (c.sizediff > 1) c.sizediff = 1;
     
     // Show cmd
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();

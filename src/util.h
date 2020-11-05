@@ -18,7 +18,7 @@ namespace sansa
   #ifndef DELLY_SVT_TRANS
   #define DELLY_SVT_TRANS 5
   #endif
-  
+
   // Structural variant record
   struct SV {
     int32_t chr;
@@ -28,11 +28,13 @@ namespace sansa
     int32_t id;
     int32_t qual;
     int32_t svt;
-    int32_t svl;
+    int32_t svlen;
     
-    SV() : chr(0), svStart(0), chr2(0), svEnd(0), id(-1), qual(0), svt(-1), svl(-1) {}
+    SV() : chr(0), svStart(0), chr2(0), svEnd(0), id(-1), qual(0), svt(-1), svlen(-1) {}
 
-    SV(int32_t const c1, int32_t const pos1, int32_t const c2, int32_t pos2, int32_t const ival, int32_t const qval, int32_t const svtval, int32_t const svl) : chr(c1), svStart(pos1), chr2(c2), svEnd(pos2), id(ival), qual(qval), svt(svtval), svl(svl) {}
+    SV(int32_t const c1, int32_t const pos1, int32_t const c2, int32_t pos2) : chr(c1), svStart(pos1), chr2(c2), svEnd(pos2), id(-1), qual(0), svt(-1), svlen(-1) {}
+
+    SV(int32_t const c1, int32_t const pos1, int32_t const c2, int32_t pos2, int32_t const ival, int32_t const qval, int32_t const svtval, int32_t const svl) : chr(c1), svStart(pos1), chr2(c2), svEnd(pos2), id(ival), qual(qval), svt(svtval), svlen(svl) {}
   };
 
   
@@ -44,6 +46,16 @@ namespace sansa
     }
   };
 
+
+  inline std::string
+  _addID(int32_t const svt) {
+    if (svt == 0) return "INV";
+    else if (svt == 1) return "INV";
+    else if (svt == 2) return "DEL";
+    else if (svt == 3) return "DUP";
+    else if (svt == 4) return "INS";
+    else return "BND";
+  }
   
   inline int32_t
     _decodeOrientation(std::string const& value) {

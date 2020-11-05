@@ -84,27 +84,12 @@ namespace sansa
     int32_t nct = 0;
     char* ct = NULL;
     
-    // Get the valid columns
-    uint32_t fieldIndex = 0;
-    typedef std::map<std::string, uint32_t> TColumnMap;
-    TColumnMap cMap;
-    cMap["chr"] = fieldIndex++;
-    cMap["start"] = fieldIndex++;
-    cMap["chr2"] = fieldIndex++;
-    cMap["end"] = fieldIndex++;
-    cMap["id"] = fieldIndex++;
-    cMap["qual"] = fieldIndex++;
-    cMap["pass"] = fieldIndex++;
-    if (_isKeyPresent(hdr, "SVTYPE")) cMap["svtype"] = fieldIndex++;
-    if (_isKeyPresent(hdr, "CT")) cMap["ct"] = fieldIndex++;
-    if (_isKeyPresent(hdr, "SVLEN")) cMap["svlen"] = fieldIndex++;
-
     // Dump file
     boost::iostreams::filtering_ostream dumpOut;
     if (c.hasDumpFile) {
       dumpOut.push(boost::iostreams::gzip_compressor());
       dumpOut.push(boost::iostreams::file_sink(c.dumpfile.string().c_str(), std::ios_base::out | std::ios_base::binary));
-      dumpOut << "intid\tchr\tstart\tchr2\tend\tid\tqual\tpass\tsvtype\tct\tsvlen\tparsed" << std::endl;
+      dumpOut << "intid\tchr\tstart\tchr2\tend\tid\tqual\tsvtype\tct\tsvt\tsvlen\tparsed" << std::endl;
     }
 
     // Temporary chr2 map until we have seen all chromosomes
@@ -160,9 +145,6 @@ namespace sansa
 	}
       }
 
-      // PASS?
-      bool passSite = (bcf_has_filter(hdr, rec, const_cast<char*>("PASS"))==1);
-
       // CHR2
       std::string chr2Name(bcf_hdr_id2name(hdr, rec->rid));
       if (_isKeyPresent(hdr, "CHR2")) {
@@ -214,7 +196,7 @@ namespace sansa
 
       // Dump record
       if (c.hasDumpFile) {
-	dumpOut << svid << "\t" << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" << endsv << "\t" << rec->d.id << "\t" << rec->qual << "\t" << passSite << "\t" << svt << "\t" << ctval << "\t" << svlength << "\t" << parsed << std::endl;
+	dumpOut << svid << "\t" << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" << endsv << "\t" << rec->d.id << "\t" << qualval << "\t" << svt << "\t" << ctval << "\t" << svtint << "\t" << svlength << "\t" << parsed << std::endl;
       }
 
       // Store SV
@@ -245,6 +227,10 @@ namespace sansa
     if (svt != NULL) free(svt);
     if (chr2 != NULL) free(chr2);
     if (ct != NULL) free(ct);
+
+    // Close file handles
+    dumpOut.pop();
+    dumpOut.pop();
     bcf_hdr_destroy(hdr);
     bcf_close(ifile);
     bcf_destroy(rec);
