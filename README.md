@@ -10,7 +10,7 @@ Structural variant (SV) annotation using database SVs
 
 `make all`
 
-# Germline SV annotation
+# SV annotation
 
 Download an annotation database. Examples are [gnomAD-SV](https://gnomad.broadinstitute.org/) or [1000 Genomes phase 3](https://www.internationalgenome.org/phase-3-structural-variant-dataset) and then run the annotation.
 
