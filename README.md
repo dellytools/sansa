@@ -36,7 +36,7 @@ You can also include unmatched query SVs in the output using `-m`.
 
 `sansa annotate -m -d gnomad_v2.1_sv.sites.vcf.gz input.vcf.gz`
 
-By default, SVs are only compared within the same SV type (DELs with DELs, INVs with INVs, and so on). For (delly)[https://github.com/dellytools/delly] this comparison is INFO/CT aware. You can deactivate this SV type check using `-n`.
+By default, SVs are only compared within the same SV type (DELs with DELs, INVs with INVs, and so on). For [delly](https://github.com/dellytools/delly) this comparison is INFO/CT aware. You can deactivate this SV type check using `-n`.
 
 `sansa annotate -n -d gnomad_v2.1_sv.sites.vcf.gz input.vcf.gz`
 
