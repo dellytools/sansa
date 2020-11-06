@@ -12,7 +12,7 @@ Structural variant (SV) annotation using database SVs
 
 # SV annotation
 
-Download an annotation database. Examples are [gnomAD-SV](https://gnomad.broadinstitute.org/) and then run the annotation.
+Download an annotation database. Examples are [gnomAD-SV (GRCh37)](https://gnomad.broadinstitute.org/), [1000 Genomes phase 3 (low-coverage, GRCh37)](https://www.internationalgenome.org/phase-3-structural-variant-dataset) and then run the annotation.
 
 `sansa annotate -d gnomad_v2.1_sv.sites.vcf.gz input.vcf.gz`
 
