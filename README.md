@@ -19,7 +19,7 @@ The method generates two output files: `anno.bcf` with annotation SVs augmented 
 
 [bcftools](https://github.com/samtools/bcftools) can be used to extract all INFO fields you want as annotation. For instance, let's annotate with the VCF ID and EUR_AF for the European allele frequency in gnomad-SV. Always include INFO/ANNOID as the first column.
 
-`bcftools query -H -f "%INFO/ANNOID %ID %INFO/AF\n" anno.bcf | sed -e 's/^# //' > anno.txt`
+`bcftools query -H -f "%INFO/ANNOID %ID %INFO/EUR_AF\n" anno.bcf | sed -e 's/^# //' > anno.txt`
 
 Last is a simple join of query SVs with matched database SVs.
 
