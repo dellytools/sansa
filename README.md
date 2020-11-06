@@ -1,8 +1,8 @@
-# sansa
+# Sansa
 
 Structural variant (SV) annotation using database SVs
 
-# Installation
+## Installation
 
 `git clone --recursive https://github.com/dellytools/sansa.git`
 
@@ -10,7 +10,7 @@ Structural variant (SV) annotation using database SVs
 
 `make all`
 
-# SV annotation
+## SV annotation
 
 Download an annotation database. Examples are [gnomAD-SV](https://gnomad.broadinstitute.org/) or [1000 Genomes phase 3](https://www.internationalgenome.org/phase-3-structural-variant-dataset) and then run the annotation.
 
@@ -26,7 +26,7 @@ Last is a simple join of query SVs with matched database SVs based on the first 
 
 `join anno.tsv <(zcat query.tsv.gz | sort -k 1b,1) > results.tsv`
 
-# Parameters
+## Parameters
 
 [Sansa](https://github.com/dellytools/sansa) matches SVs based on the absolute difference in breakpoint locations (`-b`) and the size ratio (`-r`) of the smaller SV compared to the larger SV. By default, the SVs need to have their start and end breakpoint within 50bp and differ in size by less than 20% (`-r 0.8`).
 
@@ -44,14 +44,14 @@ By default, SVs are only compared within the same SV type (DELs with DELs, INVs 
 
 `sansa annotate -n -d gnomad_v2.1_sv.sites.vcf.gz input.vcf.gz`
 
-# Citation
+## Citation
 
 Tobias Rausch, Thomas Zichner, Andreas Schlattl, Adrian M. Stuetz, Vladimir Benes, Jan O. Korbel.      
 DELLY: structural variant discovery by integrated paired-end and split-read analysis.     
 Bioinformatics. 2012 Sep 15;28(18):i333-i339.       
 [https://doi.org/10.1093/bioinformatics/bts378](https://doi.org/10.1093/bioinformatics/bts378)
 
-# License
+## License
 
 Sansa is distributed under the BSD 3-Clause license. Consult the accompanying [LICENSE](https://github.com/dellytools/sansa/blob/master/LICENSE) file for more details.
 
