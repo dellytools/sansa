@@ -28,6 +28,10 @@ Last is a simple join of query SVs with matched database SVs based on the first 
 
 # Parameters
 
+[Sansa](https://github.com/dellytools/sansa) matches SVs based on the absolute difference in breakpoint locations (`-b`) and the size ratio (`-r`) of the smaller SV compared to the larger SV. By default, the SVs need to have their start and end breakpoint within 50bp and differ in size by less than 20% (`-r 0.8`).
+
+`sansa annotate -b 50 -r 0.8 -d gnomad_v2.1_sv.sites.vcf.gz input.vcf.gz`
+
 By default, [sansa](https://github.com/dellytools/sansa) only reports the best matching SVs. You can change the matching strategy to `all` using `-s`.
 
 `sansa annotate -s all -d gnomad_v2.1_sv.sites.vcf.gz input.vcf.gz`
