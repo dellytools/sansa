@@ -28,6 +28,13 @@ Last is a simple join of query SVs with matched database SVs based on the first 
 
 # Parameters
 
+By default, [sansa](https://github.com/dellytools/sansa) only reports the best matching SVs. You can change the matching strategy to `all` using `-s`.
+
+`sansa annotate -s all -d gnomad_v2.1_sv.sites.vcf.gz input.vcf.gz`
+
+You can also include unmatched query SVs in the output using `-m`.
+
+`sansa annotate -m -d gnomad_v2.1_sv.sites.vcf.gz input.vcf.gz`
 
 # Citation
 
