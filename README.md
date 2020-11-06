@@ -16,15 +16,15 @@ Download an annotation database. Examples are [gnomAD-SV](https://gnomad.broadin
 
 `sansa annotate -d gnomad_v2.1_sv.sites.vcf.gz input.vcf.gz`
 
-The method generates two output files: `anno.bcf` with annotation SVs augmented by a unique ID (INFO/ANNOID) and `query.txt.gz` with query SVs matched to annotation IDs.
+The method generates two output files: `anno.bcf` with annotation SVs augmented by a unique ID (INFO/ANNOID) and `query.tsv.gz` with query SVs matched to annotation IDs.
 
 [bcftools](https://github.com/samtools/bcftools) can be used to extract all INFO fields you want as annotation. For instance, let's annotate with the VCF ID and EUR_AF for the European allele frequency in gnomad-SV. Always include INFO/ANNOID as the first column.
 
-`bcftools query -H -f "%INFO/ANNOID %ID %INFO/EUR_AF\n" anno.bcf | sed -e 's/^# //' > anno.txt`
+`bcftools query -H -f "%INFO/ANNOID\t%ID\t%INFO/EUR_AF\n" anno.bcf | sed -e 's/^# //' > anno.tsv`
 
 Last is a simple join of query SVs with matched database SVs based on the first column (ANNOID).
 
-`join anno.txt <(zcat query.txt.gz | sort -k 1b,1) > results.txt`
+`join anno.tsv <(zcat query.tsv.gz | sort -k 1b,1) > results.tsv`
 
 # Parameters
 

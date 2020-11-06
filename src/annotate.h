@@ -29,6 +29,8 @@ namespace sansa
   struct AnnotateConfig {
     bool hasCT;
     bool matchSvType;
+    bool bestMatch;
+    bool reportNoMatch;
     int32_t bpwindow;
     float sizediff;
     boost::filesystem::path annofile;
@@ -80,6 +82,7 @@ namespace sansa
   int annotate(int argc, char** argv) {
     AnnotateConfig c;
     c.hasCT = false;
+    std::string strategy = "best";
     
     // Parameter
     boost::program_options::options_description generic("Generic options");
@@ -87,10 +90,12 @@ namespace sansa
       ("help,?", "show help message")
       ("db,d", boost::program_options::value<boost::filesystem::path>(&c.db)->default_value("database.bcf"), "database VCF/BCF file")
       ("bpoffset,b", boost::program_options::value<int32_t>(&c.bpwindow)->default_value(50), "max. breakpoint offset")
-      ("sizediff,s", boost::program_options::value<float>(&c.sizediff)->default_value(0.8), "min. size ratio smaller SV to larger SV")
+      ("ratio,r", boost::program_options::value<float>(&c.sizediff)->default_value(0.8), "min. size ratio smaller SV to larger SV")
+      ("strategy,s", boost::program_options::value<std::string>(&strategy)->default_value("best"), "matching strategy [best|all]")
       ("anno,a", boost::program_options::value<boost::filesystem::path>(&c.annofile)->default_value("anno.bcf"), "output annotation VCF/BCF file")
-      ("output,o", boost::program_options::value<boost::filesystem::path>(&c.matchfile)->default_value("query.txt.gz"), "gzipped output file for query SVs")
-      ("notype,n", "Do not require matching SV types")
+      ("output,o", boost::program_options::value<boost::filesystem::path>(&c.matchfile)->default_value("query.tsv.gz"), "gzipped output file for query SVs")
+      ("notype,n", "do not require matching SV types")
+      ("nomatch,m", "report SVs without match in database (ANNOID=None)")
       ;
     
     boost::program_options::options_description hidden("Hidden options");
@@ -120,9 +125,21 @@ namespace sansa
     if (vm.count("notype")) c.matchSvType = false;
     else c.matchSvType = true;
 
+    // Report no matches
+    if (vm.count("nomatch")) c.reportNoMatch = true;
+    else c.reportNoMatch = false;
+
     // Check size ratio
     if (c.sizediff < 0) c.sizediff = 0;
     else if (c.sizediff > 1) c.sizediff = 1;
+
+    // Check strategy
+    if (strategy == "all") c.bestMatch = false;
+    else c.bestMatch = true;
+
+    // Check output directory
+    if (!_outfileValid(c.matchfile)) return 1;
+    if (!_outfileValid(c.annofile)) return 1;
     
     // Show cmd
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();

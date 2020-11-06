@@ -49,7 +49,7 @@ namespace sansa
     boost::iostreams::filtering_ostream dataOut;
     dataOut.push(boost::iostreams::gzip_compressor());
     dataOut.push(boost::iostreams::file_sink(c.matchfile.string().c_str(), std::ios_base::out | std::ios_base::binary));
-    dataOut << "[1]ANNOID query.chr query.start query.chr2 query.end query.id query.qual query.svtype query.svlen" << std::endl;
+    dataOut << "[1]ANNOID\tquery.chr\tquery.start\tquery.chr2\tquery.end\tquery.id\tquery.qual\tquery.svtype\tquery.svlen" << std::endl;
     
     // Parse VCF records
     bcf1_t* rec = bcf_init();
@@ -154,21 +154,54 @@ namespace sansa
 
       // Any breakpoint hit?
       typename TSV::iterator itSV = std::lower_bound(svs.begin(), svs.end(), SV(refIndex, std::max(0, startsv - c.bpwindow), refIndex2, endsv), SortSVs<SV>());
-      for(;itSV != svs.end(); ++itSV) {
-	if (std::abs(itSV->svStart - startsv) > c.bpwindow) break;
+      int32_t bestID = -1;
+      float bestScore = -1;
+      bool noMatch = true;
+      for(; itSV != svs.end(); ++itSV) {
+	int32_t startDiff = std::abs(itSV->svStart - startsv);
+	if (startDiff > c.bpwindow) break;
 	if (itSV->chr2 != refIndex2) continue;
 	if ((c.matchSvType) && (itSV->svt != svtint)) continue;
-	if (std::abs(itSV->svEnd - endsv) > c.bpwindow) continue;
+	int32_t endDiff = std::abs(itSV->svEnd - endsv);
+	if (endDiff > c.bpwindow) continue;
+	if (itSV->id == -1) continue;
+	float score = 0;
 	if ((itSV->svlen > 0) && (svlength > 0)) {
 	  float rat = itSV->svlen / svlength;
 	  if (svlength < itSV->svlen) rat = svlength / itSV->svlen;
 	  if (rat < c.sizediff) continue;
+	  score += rat;
 	}
+	
+	// Found match
+	noMatch = false;
+	if (c.bestMatch) {
+	  if (c.bpwindow > 0) {
+	    if (startDiff > endDiff) score += (1 - float(startDiff) / (float(c.bpwindow)));
+	    else score += (1 - float(endDiff) / (float(c.bpwindow)));
+	  } else score += 1;
+	  if (score > bestScore) {
+	    bestScore = score;
+	    bestID = itSV->id;
+	  }
+	} else {
+	  std::string id("id");
+	  std::string padNumber = boost::lexical_cast<std::string>(itSV->id);
+	  padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
+	  id += padNumber;
+	  dataOut << id << '\t' << bcf_hdr_id2name(hdr, rec->rid) << '\t' << (rec->pos + 1) << '\t' << chr2Name << '\t' <<  endsv << '\t' << rec->d.id << '\t' << qualval << '\t' << svtval << '\t' << svlength << std::endl;
+	}
+      }
+      if ((c.bestMatch) || ((c.reportNoMatch) && (noMatch))) {
 	std::string id("id");
-        std::string padNumber = boost::lexical_cast<std::string>(itSV->id);
-        padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
-        id += padNumber;
-	dataOut << id << "\t" << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" <<  endsv << "\t" << rec->d.id << "\t" << qualval << "\t" << svtval << "\t" << svlength << std::endl;
+	if (noMatch) {
+	  id = "None";
+	} else {
+	  std::string padNumber = boost::lexical_cast<std::string>(bestID);
+	  padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
+	  id += padNumber;
+	}
+	dataOut << id << '\t' << bcf_hdr_id2name(hdr, rec->rid) << '\t' << (rec->pos + 1) << '\t' << chr2Name << '\t' <<  endsv << '\t' << rec->d.id << '\t' << qualval << '\t' << svtval << '\t' << svlength << std::endl;
       }
       
       // Successful parse
