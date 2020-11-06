@@ -31,20 +31,6 @@ namespace sansa
     }
     bcf_hdr_t* hdr = bcf_hdr_read(ifile);
 
-    // Read SV information
-    int32_t nsvend = 0;
-    int32_t* svend = NULL;
-    int32_t nsvlen = 0;
-    int32_t* svlen = NULL;
-    int32_t npos2 = 0;
-    int32_t* pos2 = NULL;
-    int32_t nsvt = 0;
-    char* svt = NULL;
-    int32_t nchr2 = 0;
-    char* chr2 = NULL;
-    int32_t nct = 0;
-    char* ct = NULL;
-
     // Output file
     boost::iostreams::filtering_ostream dataOut;
     dataOut.push(boost::iostreams::gzip_compressor());
@@ -59,15 +45,8 @@ namespace sansa
     int32_t refIndex = -1;
     int32_t refIndex2 = -1;
     while (bcf_read(ifile, hdr, rec) == 0) {
-      ++sitecount;
-      
-      // Defaults
-      std::string svtval = "NA";
-      bool endPresent = false;
-      bool pos2Present = false;
-      int32_t endsv = -1;
       int32_t startsv = rec->pos + 1;
-      int32_t svlength = -1;
+      ++sitecount;
 
       // New chromosome?
       if (rec->rid != lastRID) {
@@ -84,68 +63,27 @@ namespace sansa
       // Unpack INFO
       bcf_unpack(rec, BCF_UN_INFO);
 
-      // SVTYPE
-      if (_isKeyPresent(hdr, "SVTYPE")) {
-	if (bcf_get_info_string(hdr, rec, "SVTYPE", &svt, &nsvt) > 0) {
-	  svtval = std::string(svt);
-	} else continue;
-      }
-
-      // CT
+      // Parse INFO fields
+      std::string svtval = "NA";
+      if (!_parseSVTYPE(hdr, rec, svtval)) continue;
       std::string ctval("NA");
-      if (_isKeyPresent(hdr, "CT")) {
-	if (bcf_get_info_string(hdr, rec, "CT", &ct, &nct) > 0) {
-	  ctval = std::string(ct);
-	}
-      }
-
-      // CHR2
+      _parse_bcf_string(hdr, rec, "CT", ctval);
       std::string chr2Name(bcf_hdr_id2name(hdr, rec->rid));
       refIndex2 = refIndex;
-      if (_isKeyPresent(hdr, "CHR2")) {
-	if (bcf_get_info_string(hdr, rec, "CHR2", &chr2, &nchr2) > 0) {
-	  chr2Name = std::string(chr2);
-	  if (chrMap.find(chr2Name) == chrMap.end()) continue;
-	  else refIndex2 = chrMap[chr2Name];
-	}
+      if (_parse_bcf_string(hdr, rec, "CHR2", chr2Name)) {
+	if (chrMap.find(chr2Name) == chrMap.end()) continue;
+	else refIndex2 = chrMap[chr2Name];
       }
-
-      // POS2
-      if (_isKeyPresent(hdr, "POS2")) {
-	if (bcf_get_info_int32(hdr, rec, "POS2", &pos2, &npos2) > 0) {
-	  pos2Present = true;
-	}
-      }
-
-      // SVLEN
-      if (_isKeyPresent(hdr, "SVLEN")) {
-	if (bcf_get_info_int32(hdr, rec, "SVLEN", &svlen, &nsvlen) > 0) {
-	  svlength = *svlen;
-	}
-      }
-
-      // END
-      if (_isKeyPresent(hdr, "END")) {
-	if (bcf_get_info_int32(hdr, rec, "END", &svend, &nsvend) > 0) {
-	  endPresent = true;
-	}
-      }
+      int32_t pos2val = -1;
+      _parse_bcf_int32(hdr, rec, "POS2", pos2val);
+      int32_t endval = -1;
+      _parse_bcf_int32(hdr, rec, "END", endval);
+      int32_t svlenval = -1;
+      _parse_bcf_int32(hdr, rec, "SVLEN", svlenval);
       
-      if ((pos2Present) && (endPresent)) {
-	if (std::string(svt) == "BND") {
-	  endsv = *pos2;
-	} else {
-	  endsv = *svend;
-	}
-      }
-      else if (pos2Present) endsv = *pos2;
-      else if (endPresent) endsv = *svend;
-      else {
-	std::string refAllele = rec->d.allele[0];
-	std::string altAllele = rec->d.allele[1];
-	int32_t diff = refAllele.size() - altAllele.size();
-	endsv = rec->pos + diff + 2;
-      }
+      // Derive proper END and SVLEN
+      int32_t endsv = deriveEndPos(rec, svtval, pos2val, endval);
+      int32_t svlength = deriveSvLength(rec, svtval, endval, svlenval);
 
       // Numerical SV type
       int32_t svtint = _decodeOrientation(ctval, svtval);
@@ -212,14 +150,6 @@ namespace sansa
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Parsed " << parsedSV << " out of " << sitecount << " VCF/BCF records." << std::endl;
 	
-    // Clean-up
-    if (svend != NULL) free(svend);
-    if (svlen != NULL) free(svlen);
-    if (pos2 != NULL) free(pos2);
-    if (svt != NULL) free(svt);
-    if (chr2 != NULL) free(chr2);
-    if (ct != NULL) free(ct);
-
     // Close file handles
     dataOut.pop();
     dataOut.pop();

@@ -15,55 +15,6 @@
 namespace sansa
 {
 
-  inline void
-  _remove_info_tag(bcf_hdr_t* hdr, bcf1_t* rec, std::string const& tag) {
-    bcf_update_info(hdr, rec, tag.c_str(), NULL, 0, BCF_HT_INT);  // Type does not matter for n = 0
-  }
-  
-  inline void
-  _remove_format_tag(bcf_hdr_t* hdr, bcf1_t* rec, std::string const& tag) {
-    bcf_update_format(hdr, rec, tag.c_str(), NULL, 0, BCF_HT_INT);  // Type does not matter for n = 0
-  }
-
-  inline bool
-  _isKeyPresent(bcf_hdr_t const* hdr, std::string const& key) {
-    return (bcf_hdr_id2int(hdr, BCF_DT_ID, key.c_str())>=0);
-  }
-  
-  inline int
-  _getInfoType(bcf_hdr_t const* hdr, std::string const& key) {
-    return bcf_hdr_id2type(hdr, BCF_HL_INFO, bcf_hdr_id2int(hdr, BCF_DT_ID, key.c_str()));
-  }
-
-  inline int
-  _getFormatType(bcf_hdr_t const* hdr, std::string const& key) {
-    return bcf_hdr_id2type(hdr, BCF_HL_FMT, bcf_hdr_id2int(hdr, BCF_DT_ID, key.c_str()));
-  }
-  
-  inline bool _missing(bool const value) {
-    return !value;
-  }
-  
-  inline bool _missing(float const value) {
-    return bcf_float_is_missing(value);
-  }
-  
-  inline bool _missing(int8_t const value) {
-    return (value == bcf_int8_missing);
-  }
-  
-  inline bool _missing(int16_t const value) {
-    return (value == bcf_int16_missing);
-  }
-  
-  inline bool _missing(int32_t const value) {
-    return (value == bcf_int32_missing);
-  }
-  
-  inline bool _missing(std::string const& value) {
-    return ((value.empty()) || (value == "."));
-  }
-  
 
   template<typename TConfig, typename TSV, typename TMap>
   inline bool
@@ -79,20 +30,6 @@ namespace sansa
       return false;
     }
     bcf_hdr_t* hdr = bcf_hdr_read(ifile);
-    
-    // Read SV information
-    int32_t nsvend = 0;
-    int32_t* svend = NULL;
-    int32_t nsvlen = 0;
-    int32_t* svlen = NULL;
-    int32_t npos2 = 0;
-    int32_t* pos2 = NULL;
-    int32_t nsvt = 0;
-    char* svt = NULL;
-    int32_t nchr2 = 0;
-    char* chr2 = NULL;
-    int32_t nct = 0;
-    char* ct = NULL;
     
     // Open output VCF file
     htsFile *ofile = hts_open(c.annofile.string().c_str(), "wb");
@@ -114,13 +51,7 @@ namespace sansa
     int32_t sitecount = 0;
     int32_t lastRID = -1;
     while (bcf_read(ifile, hdr, rec) == 0) {
-      // Defaults
-      std::string svtval = "NA";
-      bool endPresent = false;
-      bool pos2Present = false;
-      int32_t endsv = -1;
       int32_t startsv = rec->pos + 1;
-      int32_t svlength = -1;
       bool parsed = true;
 
       // Count records
@@ -139,75 +70,31 @@ namespace sansa
       // Unpack INFO
       bcf_unpack(rec, BCF_UN_INFO);
 
-      // SVTYPE
-      if (_isKeyPresent(hdr, "SVTYPE")) {
-	if (bcf_get_info_string(hdr, rec, "SVTYPE", &svt, &nsvt) > 0) {
-	  svtval = std::string(svt);
-	} else {
-	  parsed = false;
-	}
-      }
-
-      // CT
+      // Parse INFO fields
+      std::string svtval = "NA";
+      if (!_parseSVTYPE(hdr, rec, svtval)) parsed = false;
       std::string ctval("NA");
-      if (_isKeyPresent(hdr, "CT")) {
-	if (bcf_get_info_string(hdr, rec, "CT", &ct, &nct) > 0) {
-	  ctval = std::string(ct);
-	  c.hasCT = true;
-	}
-      }
-
-      // CHR2
+      if (_parse_bcf_string(hdr, rec, "CT", ctval)) c.hasCT = true;
       std::string chr2Name(bcf_hdr_id2name(hdr, rec->rid));
-      if (_isKeyPresent(hdr, "CHR2")) {
-	if (bcf_get_info_string(hdr, rec, "CHR2", &chr2, &nchr2) > 0) chr2Name = std::string(chr2);
-      }
+      _parse_bcf_string(hdr, rec, "CHR2", chr2Name);      
+      int32_t pos2val = -1;
+      _parse_bcf_int32(hdr, rec, "POS2", pos2val);
+      int32_t endval = -1;
+      _parse_bcf_int32(hdr, rec, "END", endval);
+      int32_t svlenval = -1;
+      _parse_bcf_int32(hdr, rec, "SVLEN", svlenval);
 
-      // POS2
-      if (_isKeyPresent(hdr, "POS2")) {
-	if (bcf_get_info_int32(hdr, rec, "POS2", &pos2, &npos2) > 0) {
-	  pos2Present = true;
-	}
-      }
-
-      // SVLEN
-      if (_isKeyPresent(hdr, "SVLEN")) {
-	if (bcf_get_info_int32(hdr, rec, "SVLEN", &svlen, &nsvlen) > 0) {
-	  svlength = *svlen;
-	}
-      }
-
-      // END
-      if (_isKeyPresent(hdr, "END")) {
-	if (bcf_get_info_int32(hdr, rec, "END", &svend, &nsvend) > 0) {
-	  endPresent = true;
-	}
-      }
-
+      // Derive proper END and SVLEN
+      int32_t endsv = deriveEndPos(rec, svtval, pos2val, endval);
+      int32_t svlength = deriveSvLength(rec, svtval, endval, svlenval);
       
-      if ((pos2Present) && (endPresent)) {
-	if (std::string(svt) == "BND") {
-	  endsv = *pos2;
-	} else {
-	  endsv = *svend;
-	}
-      }
-      else if (pos2Present) endsv = *pos2;
-      else if (endPresent) endsv = *svend;
-      else {
-	std::string refAllele = rec->d.allele[0];
-	std::string altAllele = rec->d.allele[1];
-	int32_t diff = refAllele.size() - altAllele.size();
-	endsv = rec->pos + diff + 2;
-      }
-
       // Numerical SV type
-      int32_t svtint = _decodeOrientation(ctval, std::string(svt));
+      int32_t svtint = _decodeOrientation(ctval, svtval);
       if (svtint == -1) parsed = false;
       int32_t qualval = (int32_t) (rec->qual);
 
       // Dump record
-      //if (!parsed) std::cerr << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" << endsv << "\t" << rec->d.id << "\t" << qualval << "\t" << svt << "\t" << ctval << "\t" << svtint << "\t" << svlength << std::endl;
+      //if (!parsed) std::cerr << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" << endsv << "\t" << rec->d.id << "\t" << qualval << "\t" << svtval << "\t" << ctval << "\t" << svtint << "\t" << svlength << std::endl;
 
       // Store SV
       if (parsed) {
@@ -224,11 +111,23 @@ namespace sansa
       }
     }
 
-    // Remap chr names
+    // Remap chr names and ensure canonical order for translocations
     typedef std::map<int32_t, int32_t> TChrIdMap;
     TChrIdMap chrIdMap;
     for(typename TChr2Map::iterator itc2 = chr2Map.begin(); itc2 != chr2Map.end(); ++itc2) chrIdMap.insert(std::make_pair(itc2->second, chrMap[itc2->first]));
-    for(uint32_t i = 0; i < svs.size(); ++i) svs[i].chr2 = chrIdMap[svs[i].chr2];
+    for(uint32_t i = 0; i < svs.size(); ++i) {
+      svs[i].chr2 = chrIdMap[svs[i].chr2];
+      if (svs[i].chr != svs[i].chr2) {
+	if (svs[i].chr < svs[i].chr2) {
+	  int32_t tmpChr = svs[i].chr;
+	  svs[i].chr = svs[i].chr2;
+	  svs[i].chr2 = tmpChr;
+	  int32_t tmpPos = svs[i].svStart;
+	  svs[i].svStart = svs[i].svEnd;
+	  svs[i].svEnd = tmpPos;
+	}
+      }
+    }
 
     // Sort SVs
     sort(svs.begin(), svs.end(), SortSVs<SV>());
@@ -237,14 +136,6 @@ namespace sansa
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Parsed " << svid << " out of " << sitecount << " VCF/BCF records." << std::endl;
 	
-    // Clean-up
-    if (svend != NULL) free(svend);
-    if (svlen != NULL) free(svlen);
-    if (pos2 != NULL) free(pos2);
-    if (svt != NULL) free(svt);
-    if (chr2 != NULL) free(chr2);
-    if (ct != NULL) free(ct);
-
     // Close output VCF
     bcf_hdr_destroy(hdr_out);
     hts_close(ofile);

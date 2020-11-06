@@ -47,24 +47,122 @@ namespace sansa
   };
 
 
-  inline std::string
-  _addID(int32_t const svt) {
-    if (svt == 0) return "INV";
-    else if (svt == 1) return "INV";
-    else if (svt == 2) return "DEL";
-    else if (svt == 3) return "DUP";
-    else if (svt == 4) return "INS";
-    else return "BND";
+  inline void
+  _remove_info_tag(bcf_hdr_t* hdr, bcf1_t* rec, std::string const& tag) {
+    bcf_update_info(hdr, rec, tag.c_str(), NULL, 0, BCF_HT_INT);  // Type does not matter for n = 0
   }
   
-  inline int32_t
-    _decodeOrientation(std::string const& value) {
-    if (value=="3to3") return 0;
-    else if (value=="5to5") return 1;
-    else if (value=="3to5") return 2;
-    else if (value=="5to3") return 3;
-    else return 4;
+  inline void
+  _remove_format_tag(bcf_hdr_t* hdr, bcf1_t* rec, std::string const& tag) {
+    bcf_update_format(hdr, rec, tag.c_str(), NULL, 0, BCF_HT_INT);  // Type does not matter for n = 0
   }
+
+  inline bool
+  _isKeyPresent(bcf_hdr_t const* hdr, std::string const& key) {
+    return (bcf_hdr_id2int(hdr, BCF_DT_ID, key.c_str())>=0);
+  }
+  
+  inline int
+  _getInfoType(bcf_hdr_t const* hdr, std::string const& key) {
+    return bcf_hdr_id2type(hdr, BCF_HL_INFO, bcf_hdr_id2int(hdr, BCF_DT_ID, key.c_str()));
+  }
+
+  inline int
+  _getFormatType(bcf_hdr_t const* hdr, std::string const& key) {
+    return bcf_hdr_id2type(hdr, BCF_HL_FMT, bcf_hdr_id2int(hdr, BCF_DT_ID, key.c_str()));
+  }
+  
+  inline bool _missing(bool const value) {
+    return !value;
+  }
+  
+  inline bool _missing(float const value) {
+    return bcf_float_is_missing(value);
+  }
+  
+  inline bool _missing(int8_t const value) {
+    return (value == bcf_int8_missing);
+  }
+  
+  inline bool _missing(int16_t const value) {
+    return (value == bcf_int16_missing);
+  }
+  
+  inline bool _missing(int32_t const value) {
+    return (value == bcf_int32_missing);
+  }
+  
+  inline bool _missing(std::string const& value) {
+    return ((value.empty()) || (value == "."));
+  }
+  
+  inline bool
+  _parse_bcf_string(bcf_hdr_t* hdr, bcf1_t* rec, std::string const& key, std::string& strval) {
+    if (_isKeyPresent(hdr, key)) {
+      char* chr2 = NULL;
+      int32_t nchr2 = 0;
+      if (bcf_get_info_string(hdr, rec, key.c_str(), &chr2, &nchr2) > 0) strval = std::string(chr2);
+      else return false;
+      if (chr2 != NULL) free(chr2);
+    } else return false;
+    return true;
+  }
+
+  inline bool
+  _parseSVTYPE(bcf_hdr_t* hdr, bcf1_t* rec, std::string& svtval) {
+    if (_parse_bcf_string(hdr, rec, "SVTYPE", svtval)) return true;
+    else {
+      std::string altAllele = rec->d.allele[1];
+      if ((altAllele.size() > 2) && (altAllele[0] == '<') && (altAllele[altAllele.size() - 1] == '>')) {
+	svtval = altAllele.substr(1,altAllele.size()-2);
+      } else return false;
+    }
+    return true;
+  }
+
+  inline bool
+  _parse_bcf_int32(bcf_hdr_t* hdr, bcf1_t* rec, std::string const& key, int32_t& intval) {
+    if (_isKeyPresent(hdr, key)) {
+      int32_t nsvlen = 0;
+      int32_t* svlen = NULL;
+      if (bcf_get_info_int32(hdr, rec, key.c_str(), &svlen, &nsvlen) > 0) intval = *svlen;
+      else return false;
+      if (svlen != NULL) free(svlen);
+    } else return false;
+    return true;
+  }
+
+
+  inline int32_t
+  deriveEndPos(bcf1_t* rec, std::string const& svtval, int32_t const pos2val, int32_t const endval) {
+    if ((pos2val != -1) && (endval != -1)) {
+      if (svtval == "BND") return pos2val;
+      else return endval;
+    }
+    else if (pos2val != -1) return pos2val;
+    else if (endval != -1) return endval;
+    else {
+      // ToDo
+      std::string refAllele = rec->d.allele[0];
+      std::string altAllele = rec->d.allele[1];
+      int32_t diff = refAllele.size() - altAllele.size();
+      return rec->pos + diff + 2;
+    }
+  }
+
+  inline int32_t
+  deriveSvLength(bcf1_t* rec, std::string const& svtval, int32_t const endval, int32_t const svlenval) {
+    if (svlenval != -1) return svlenval;
+    else {
+      if ((svtval == "DEL") || (svtval == "DUP") || (svtval == "INV")) {
+	if ((endval != -1) && (endval > rec->pos)) {
+	  return endval - rec->pos;
+	}
+      }
+    }
+    return svlenval;
+  }
+
   
   // Decode Orientation
   inline int32_t
@@ -82,6 +180,9 @@ namespace sansa
 	else if (svt == "INV") return 0;
 	else if (svt == "DUP") return 3;
 	else if (svt == "INS") return 4;
+	else if (svt == "MCNV") return 9;  // Unused SVTs
+	else if (svt == "CPX") return 10;
+	else if (svt == "CTX") return 11;
 	else return -1;
       }
       else if (value=="3to3") return 0;
