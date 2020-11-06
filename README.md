@@ -17,7 +17,7 @@ Download an annotation database. Examples are [gnomAD-SV](https://gnomad.broadin
 
 The method generates two output files: `anno.bcf` with annotation SVs augmented by a unique ID (INFO/ANNOID) and `query.txt.gz` with query SVs matched to annotation IDs.
 
-bcftools can be used to extract all INFO fields you want as annotation. For instance, let's annotate with the VCF ID and EUR_AF for the European allele frequency in gnomad-SV. Always include INFO/ANNOID as the first column.
+[bcftools](https://github.com/samtools/bcftools) can be used to extract all INFO fields you want as annotation. For instance, let's annotate with the VCF ID and EUR_AF for the European allele frequency in gnomad-SV. Always include INFO/ANNOID as the first column.
 
 `bcftools query -H -f "%INFO/ANNOID %ID %INFO/AF\n" anno.bcf | sed -e 's/^# //' > anno.txt`
 
