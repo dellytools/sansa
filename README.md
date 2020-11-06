@@ -23,4 +23,4 @@ The method generates two output files: `anno.bcf` with annotation SVs augmented 
 
 Last is a simple join of query SVs with matched database SVs based on the first column (ANNOID).
 
-`join <(zcat query.txt.gz | sort -k 1b,1) anno.txt > results.txt`
+`join anno.txt <(zcat query.txt.gz | sort -k 1b,1) > results.txt`
