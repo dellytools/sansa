@@ -15,6 +15,16 @@
 namespace sansa
 {
 
+  inline void
+  _remove_info_tag(bcf_hdr_t* hdr, bcf1_t* rec, std::string const& tag) {
+    bcf_update_info(hdr, rec, tag.c_str(), NULL, 0, BCF_HT_INT);  // Type does not matter for n = 0
+  }
+  
+  inline void
+  _remove_format_tag(bcf_hdr_t* hdr, bcf1_t* rec, std::string const& tag) {
+    bcf_update_format(hdr, rec, tag.c_str(), NULL, 0, BCF_HT_INT);  // Type does not matter for n = 0
+  }
+
   inline bool
   _isKeyPresent(bcf_hdr_t const* hdr, std::string const& key) {
     return (bcf_hdr_id2int(hdr, BCF_DT_ID, key.c_str())>=0);
@@ -84,11 +94,15 @@ namespace sansa
     int32_t nct = 0;
     char* ct = NULL;
     
-    // Dump file
-    boost::iostreams::filtering_ostream annoOut;
-    annoOut.push(boost::iostreams::gzip_compressor());
-    annoOut.push(boost::iostreams::file_sink(c.annofile.string().c_str(), std::ios_base::out | std::ios_base::binary));
-    annoOut << "anno.id\tanno.chr\tanno.start\tanno.chr2\tanno.end\tanno.id\tanno.qual\tanno.svtype\tanno.svlen" << std::endl;
+    // Open output VCF file
+    htsFile *ofile = hts_open(c.annofile.string().c_str(), "wb");
+    bcf_hdr_t *hdr_out = bcf_hdr_dup(hdr);
+    bcf_hdr_remove(hdr_out, BCF_HL_INFO, "ANNOID");
+    bcf_hdr_append(hdr_out, "##INFO=<ID=ANNOID,Number=1,Type=String,Description=\"Annotation ID that links query SVs to database SVs.\">");
+    if (bcf_hdr_write(ofile, hdr_out) != 0) {
+      std::cerr << "Error: Failed to write BCF header!" << std::endl;
+      return false;
+    }
 
     // Temporary chr2 map until we have seen all chromosomes
     typedef std::map<std::string, int32_t> TChr2Map;
@@ -203,7 +217,9 @@ namespace sansa
 	std::string padNumber = boost::lexical_cast<std::string>(svid);
 	padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
 	id += padNumber;
-	annoOut << id << "\t" << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" << endsv << "\t" << rec->d.id << "\t" << qualval << "\t" << svtval << "\t" << svlength << std::endl;	
+	_remove_info_tag(hdr_out, rec, "ANNOID");
+	bcf_update_info_string(hdr_out, rec, "ANNOID", id.c_str());
+	bcf_write1(ofile, hdr_out, rec);
 	++svid;
       }
     }
@@ -229,9 +245,11 @@ namespace sansa
     if (chr2 != NULL) free(chr2);
     if (ct != NULL) free(ct);
 
+    // Close output VCF
+    bcf_hdr_destroy(hdr_out);
+    hts_close(ofile);
+    
     // Close file handles
-    annoOut.pop();
-    annoOut.pop();
     bcf_hdr_destroy(hdr);
     bcf_close(ifile);
     bcf_destroy(rec);

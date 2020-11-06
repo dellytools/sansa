@@ -88,8 +88,8 @@ namespace sansa
       ("db,d", boost::program_options::value<boost::filesystem::path>(&c.db)->default_value("database.bcf"), "database VCF/BCF file")
       ("bpoffset,b", boost::program_options::value<int32_t>(&c.bpwindow)->default_value(50), "max. breakpoint offset")
       ("sizediff,s", boost::program_options::value<float>(&c.sizediff)->default_value(0.8), "min. size ratio smaller SV to larger SV")
-      ("anno,a", boost::program_options::value<boost::filesystem::path>(&c.annofile)->default_value("anno.tsv.gz"), "gzipped output file for database SVs")
-      ("output,o", boost::program_options::value<boost::filesystem::path>(&c.matchfile)->default_value("query.tsv.gz"), "gzipped output file for query SVs")
+      ("anno,a", boost::program_options::value<boost::filesystem::path>(&c.annofile)->default_value("anno.bcf"), "output annotation VCF/BCF file")
+      ("output,o", boost::program_options::value<boost::filesystem::path>(&c.matchfile)->default_value("query.txt.gz"), "gzipped output file for query SVs")
       ("notype,n", "Do not require matching SV types")
       ;
     

@@ -45,10 +45,11 @@ namespace sansa
     int32_t nct = 0;
     char* ct = NULL;
 
+    // Output file
     boost::iostreams::filtering_ostream dataOut;
     dataOut.push(boost::iostreams::gzip_compressor());
     dataOut.push(boost::iostreams::file_sink(c.matchfile.string().c_str(), std::ios_base::out | std::ios_base::binary));
-    dataOut << "anno.id\tquery.chr\tquery.start\tquery.chr2\tquery.end\tquery.id\tquery.qual\tquery.svtype\tquery.svlen" << std::endl;
+    dataOut << "[1]ANNOID query.chr query.start query.chr2 query.end query.id query.qual query.svtype query.svlen" << std::endl;
     
     // Parse VCF records
     bcf1_t* rec = bcf_init();
