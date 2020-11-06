@@ -192,7 +192,7 @@ namespace sansa
 	  dataOut << id << '\t' << bcf_hdr_id2name(hdr, rec->rid) << '\t' << (rec->pos + 1) << '\t' << chr2Name << '\t' <<  endsv << '\t' << rec->d.id << '\t' << qualval << '\t' << svtval << '\t' << svlength << std::endl;
 	}
       }
-      if ((c.bestMatch) || ((c.reportNoMatch) && (noMatch))) {
+      if (((c.bestMatch) && (bestID != -1)) || ((c.reportNoMatch) && (noMatch))) {
 	std::string id("id");
 	if (noMatch) {
 	  id = "None";
