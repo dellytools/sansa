@@ -21,6 +21,6 @@ The method generates two output files: `anno.bcf` with annotation SVs augmented 
 
 `bcftools query -H -f "%INFO/ANNOID %ID %INFO/EUR_AF\n" anno.bcf | sed -e 's/^# //' > anno.txt`
 
-Last is a simple join of query SVs with matched database SVs.
+Last is a simple join of query SVs with matched database SVs based on the first column (ANNOID).
 
 `join <(zcat query.txt.gz | sort -k 1b,1) anno.txt > results.txt`
