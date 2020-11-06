@@ -81,7 +81,7 @@ namespace sansa
       _parse_bcf_int32(hdr, rec, "POS2", pos2val);
       int32_t endval = -1;
       _parse_bcf_int32(hdr, rec, "END", endval);
-      int32_t svlenval = -1;
+      int32_t svlenval = 0;
       _parse_bcf_int32(hdr, rec, "SVLEN", svlenval);
 
       // Derive proper END and SVLEN
@@ -91,10 +91,11 @@ namespace sansa
       // Numerical SV type
       int32_t svtint = _decodeOrientation(ctval, svtval);
       if (svtint == -1) parsed = false;
-      int32_t qualval = (int32_t) (rec->qual);
+      int32_t qualval = 0;
+      if (rec->qual > 0) qualval = (int32_t) (rec->qual);
 
       // Dump record
-      //if (!parsed) std::cerr << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" << endsv << "\t" << rec->d.id << "\t" << qualval << "\t" << svtval << "\t" << ctval << "\t" << svtint << "\t" << svlength << std::endl;
+      //std::cerr << parsed << "\t" << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" << endsv << "\t" << rec->d.id << "\t" << qualval << "\t" << svtval << "\t" << ctval << "\t" << svtint << "\t" << svlength << std::endl;
 
       // Store SV
       if (parsed) {

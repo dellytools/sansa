@@ -142,17 +142,24 @@ namespace sansa
     else if (pos2val != -1) return pos2val;
     else if (endval != -1) return endval;
     else {
-      // ToDo
-      std::string refAllele = rec->d.allele[0];
-      std::string altAllele = rec->d.allele[1];
-      int32_t diff = refAllele.size() - altAllele.size();
-      return rec->pos + diff + 2;
+      if (svtval == "INS") return rec->pos + 2;
+      if (svtval == "DEL") {
+	std::string refAllele = rec->d.allele[0];
+	std::string altAllele = rec->d.allele[1];
+	if ((altAllele.size()) && (refAllele.size() > altAllele.size()) && (altAllele[0] != '<')) {
+	  return rec->pos + 1 + (refAllele.size() - altAllele.size());
+	}
+      }
     }
+    return -1;
   }
 
   inline int32_t
   deriveSvLength(bcf1_t* rec, std::string const& svtval, int32_t const endval, int32_t const svlenval) {
-    if (svlenval != -1) return svlenval;
+    if (svlenval != 0) {
+      if (svlenval > 0) return svlenval;
+      else return -svlenval;
+    }
     else {
       if ((svtval == "DEL") || (svtval == "DUP") || (svtval == "INV")) {
 	if ((endval != -1) && (endval > rec->pos)) {
@@ -197,7 +204,11 @@ namespace sansa
   inline void
   fixChrNames(TChrMap& chrMap) {
     // Take care of 1 vs. chr1, X vs chrX, ...
-    std::vector<std::string> altName(chrMap.size(), "NA");
+    int32_t maxRID = 1;
+    for(typename TChrMap::iterator itcm = chrMap.begin(); itcm != chrMap.end(); ++itcm) {
+      if (itcm->second > maxRID) maxRID = itcm->second + 1;
+    }
+    std::vector<std::string> altName(maxRID, "NA");
     for(typename TChrMap::iterator itcm = chrMap.begin(); itcm != chrMap.end(); ++itcm) {
       std::string cn = itcm->first;
       if (cn.size() == 1) {

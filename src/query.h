@@ -78,7 +78,7 @@ namespace sansa
       _parse_bcf_int32(hdr, rec, "POS2", pos2val);
       int32_t endval = -1;
       _parse_bcf_int32(hdr, rec, "END", endval);
-      int32_t svlenval = -1;
+      int32_t svlenval = 0;
       _parse_bcf_int32(hdr, rec, "SVLEN", svlenval);
       
       // Derive proper END and SVLEN
@@ -88,7 +88,8 @@ namespace sansa
       // Numerical SV type
       int32_t svtint = _decodeOrientation(ctval, svtval);
       if (svtint == -1) continue;
-      int32_t qualval = (int32_t) (rec->qual);
+      int32_t qualval = 0;
+      if (rec->qual > 0) qualval = (int32_t) (rec->qual);
 
       // Any breakpoint hit?
       typename TSV::iterator itSV = std::lower_bound(svs.begin(), svs.end(), SV(refIndex, std::max(0, startsv - c.bpwindow), refIndex2, endsv), SortSVs<SV>());
