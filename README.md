@@ -1,3 +1,5 @@
+[![C/C++ CI](https://github.com/dellytools/sansa/workflows/C/C++%20CI/badge.svg)](https://github.com/dellytools/sansa/actions)
+
 # Sansa
 
 Structural variant (SV) annotation.
