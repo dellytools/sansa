@@ -16,9 +16,62 @@
 namespace sansa
 {
 
-  template<typename TConfig, typename TSV, typename TMap>
+
+
+  template<typename TConfig, typename TGenomicRegions, typename TGeneIds>
+  inline void
+  geneAnnotation(TConfig const& c, TGenomicRegions const& gRegions, TGeneIds const& geneIds, int32_t const refIndex, int32_t const svStart, int32_t const refIndex2, int32_t const svEnd, std::string& featureBp1, std::string& featureBp2) {
+    typedef typename TGenomicRegions::value_type TChromosomeRegions;
+
+    // Search nearby genes
+    for(uint32_t bp = 0; bp < 2; ++bp) {
+      // Distance vector
+      typedef std::pair<int32_t, int32_t> TDistOffset;
+      typedef std::vector<TDistOffset> TDistVector;
+      TDistVector dist;
+
+      // Fetch overlapping features
+      int32_t rid = refIndex;
+      int32_t bpoint = svStart;
+      if (bp) {
+	rid = refIndex2;
+	bpoint = svEnd;
+      }
+      for(typename TChromosomeRegions::const_iterator itg = gRegions[rid].begin(); itg != gRegions[rid].end(); ++itg) {
+	if (itg->start - bpoint > c.maxDistance) break;
+	if (bpoint - itg->end > c.maxDistance) continue;
+	int32_t featureDist = 0;
+	if (bpoint > itg->end) featureDist = itg->end - bpoint;
+	if (bpoint < itg->start) featureDist = itg->start - bpoint;
+	dist.push_back(std::make_pair(featureDist, itg - gRegions[rid].begin()));
+      }
+
+      // Sort by distance
+      std::sort(dist.begin(), dist.end());
+
+      // Assign gene IDs
+      bool firstFeature = true;
+      for(uint32_t i = 0; i < dist.size(); ++i) {
+	if (!firstFeature) {
+	  if (!bp) featureBp1 += ",";
+	  else featureBp2 += ",";
+	} else firstFeature = false;
+	if (!bp) {
+	  featureBp1 += geneIds[gRegions[rid][dist[i].second].lid] + '(' + boost::lexical_cast<std::string>(dist[i].first) + ';' + gRegions[rid][dist[i].second].strand + ')' ;
+	} else {
+	  featureBp2 += geneIds[gRegions[rid][dist[i].second].lid] + '(' + boost::lexical_cast<std::string>(dist[i].first) + ';' + gRegions[rid][dist[i].second].strand + ')' ;
+	}
+      }
+    }
+  }
+
+
+
+
+  
+  template<typename TConfig, typename TSV, typename TGenomicRegions, typename TGeneIds>
   inline bool
-  query(TConfig& c, TSV& svs, TMap& chrMap) {
+  query(TConfig& c, TSV& svs, TGenomicRegions& gRegions, TGeneIds& geneIds) {
 
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Query input SVs" << std::endl;
@@ -35,7 +88,7 @@ namespace sansa
     boost::iostreams::filtering_ostream dataOut;
     dataOut.push(boost::iostreams::gzip_compressor());
     dataOut.push(boost::iostreams::file_sink(c.matchfile.string().c_str(), std::ios_base::out | std::ios_base::binary));
-    dataOut << "[1]ANNOID\tquery.chr\tquery.start\tquery.chr2\tquery.end\tquery.id\tquery.qual\tquery.svtype\tquery.svlen" << std::endl;
+    dataOut << "[1]ANNOID\tquery.chr\tquery.start\tquery.chr2\tquery.end\tquery.id\tquery.qual\tquery.svtype\tquery.ct\tquery.svlen\tquery.startfeature\tquery.endfeature" << std::endl;
     
     // Parse VCF records
     bcf1_t* rec = bcf_init();
@@ -52,8 +105,8 @@ namespace sansa
       if (rec->rid != lastRID) {
 	lastRID = rec->rid;
 	std::string chrName = bcf_hdr_id2name(hdr, rec->rid);	
-	if (chrMap.find(chrName) == chrMap.end()) refIndex = -1;
-	else refIndex = chrMap[chrName];
+	if (c.nchr.find(chrName) == c.nchr.end()) refIndex = -1;
+	else refIndex = c.nchr[chrName];
       }
       if (refIndex == -1) continue;
       
@@ -71,8 +124,8 @@ namespace sansa
       std::string chr2Name(bcf_hdr_id2name(hdr, rec->rid));
       refIndex2 = refIndex;
       if (_parse_bcf_string(hdr, rec, "CHR2", chr2Name)) {
-	if (chrMap.find(chr2Name) == chrMap.end()) continue;
-	else refIndex2 = chrMap[chr2Name];
+	if (c.nchr.find(chr2Name) == c.nchr.end()) continue;
+	else refIndex2 = c.nchr[chr2Name];
       }
       int32_t pos2val = -1;
       _parse_bcf_int32(hdr, rec, "POS2", pos2val);
@@ -91,6 +144,13 @@ namespace sansa
       int32_t qualval = 0;
       if (rec->qual > 0) qualval = (int32_t) (rec->qual);
 
+      // Annotate genes
+      std::string featureBp1 = "";
+      std::string featureBp2 = "";
+      if (c.gtfFileFormat != -1) geneAnnotation(c, gRegions, geneIds, refIndex, rec->pos + 1, refIndex2, endsv, featureBp1, featureBp2);
+      if (featureBp1.empty()) featureBp1 = "NA";
+      if (featureBp2.empty()) featureBp2 = "NA";
+      
       // Any breakpoint hit?
       typename TSV::iterator itSV = std::lower_bound(svs.begin(), svs.end(), SV(refIndex, std::max(0, startsv - c.bpwindow), refIndex2, endsv), SortSVs<SV>());
       int32_t bestID = -1;
@@ -128,7 +188,7 @@ namespace sansa
 	  std::string padNumber = boost::lexical_cast<std::string>(itSV->id);
 	  padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
 	  id += padNumber;
-	  dataOut << id << '\t' << bcf_hdr_id2name(hdr, rec->rid) << '\t' << (rec->pos + 1) << '\t' << chr2Name << '\t' <<  endsv << '\t' << rec->d.id << '\t' << qualval << '\t' << svtval << '\t' << svlength << std::endl;
+	  dataOut << id << '\t' << bcf_hdr_id2name(hdr, rec->rid) << '\t' << (rec->pos + 1) << '\t' << chr2Name << '\t' <<  endsv << '\t' << rec->d.id << '\t' << qualval << '\t' << svtval << '\t' << ctval << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2 << std::endl;
 	}
       }
       if (((c.bestMatch) && (bestID != -1)) || ((c.reportNoMatch) && (noMatch))) {
@@ -140,7 +200,7 @@ namespace sansa
 	  padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
 	  id += padNumber;
 	}
-	dataOut << id << '\t' << bcf_hdr_id2name(hdr, rec->rid) << '\t' << (rec->pos + 1) << '\t' << chr2Name << '\t' <<  endsv << '\t' << rec->d.id << '\t' << qualval << '\t' << svtval << '\t' << svlength << std::endl;
+	dataOut << id << '\t' << bcf_hdr_id2name(hdr, rec->rid) << '\t' << (rec->pos + 1) << '\t' << chr2Name << '\t' <<  endsv << '\t' << rec->d.id << '\t' << qualval << '\t' << svtval << '\t' << ctval << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2 << std::endl;
       }
       
       // Successful parse

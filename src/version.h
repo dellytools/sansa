@@ -5,7 +5,7 @@ namespace sansa
 {
 
 
-  std::string sansaVersionNumber = "0.0.3";
+  std::string sansaVersionNumber = "0.0.5";
 
   inline 
     void printTitle(std::string const& title) 

@@ -26,7 +26,7 @@ Last is a simple join of query SVs with matched database SVs based on the first 
 
 `join anno.tsv <(zcat query.tsv.gz | sort -k 1b,1) > results.tsv`
 
-## Parameters
+## SV annotation parameters
 
 [Sansa](https://github.com/dellytools/sansa) matches SVs based on the absolute difference in breakpoint locations (`-b`) and the size ratio (`-r`) of the smaller SV compared to the larger SV. By default, the SVs need to have their start and end breakpoint within 50bp and differ in size by less than 20% (`-r 0.8`).
 
@@ -43,6 +43,23 @@ You can also include unmatched query SVs in the output using `-m`.
 By default, SVs are only compared within the same SV type (DELs with DELs, INVs with INVs, and so on). For [delly](https://github.com/dellytools/delly) this comparison is INFO/CT aware. You can deactivate this SV type check using `-n`.
 
 `sansa annotate -n -d gnomad_v2.1_sv.sites.vcf.gz input.vcf.gz`
+
+## Feature/Gene annotation
+
+Based on a distance cutoff (`-m`) [sansa](https://github.com/dellytools/sansa) matches SVs to nearby genes. The gene annotation file can be in [gtf/gff2](https://en.wikipedia.org/wiki/General_feature_format) or [gff3](https://en.wikipedia.org/wiki/General_feature_format) format.
+
+`sansa annotate -g Homo_sapiens.GRCh37.87.gtf.gz input.vcf.gz`
+
+`sansa annotate -i Name -g Homo_sapiens.GRCh37.87.gff3.gz input.vcf.gz`
+
+The output has 2 columns for genes near the SV start breakpoint and genes near the SV end breakpoint. For each gene, the output lists the gene name and in paranthesis the distance (negative values: preceeding SV breakpoint, 0: SV breakpoint within gene, positive values: suceeding breakpoint) and the strand of the gene (+/-/*).
+
+You can also use the Ensembl gene id or annotate exons instead of genes.
+
+`sansa annotate -i gene_id -g Homo_sapiens.GRCh37.87.gff3.gz input.vcf.gz`
+
+`sansa annotate -f exon -i exon_id -g Homo_sapiens.GRCh37.87.gff3.gz input.vcf.gz`
+
 
 ## Citation
 

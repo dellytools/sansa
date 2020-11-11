@@ -19,6 +19,38 @@ namespace sansa
   #define DELLY_SVT_TRANS 5
   #endif
 
+  struct IntervalLabel {
+    int32_t start;
+    int32_t end;
+    char strand;
+    int32_t lid;
+
+    explicit IntervalLabel(int32_t s) : start(s), end(s+1), strand('*'), lid(-1) {}
+    IntervalLabel(int32_t s, int32_t e, char t, int32_t l) : start(s), end(e), strand(t), lid(l) {}
+  };
+
+  
+  template<typename TRecord>
+  struct SortIntervalLabel : public std::binary_function<TRecord, TRecord, bool> {
+    inline bool operator()(TRecord const& s1, TRecord const& s2) const {
+      return s1.lid < s2.lid;
+    }
+  };
+
+  template<typename TRecord>
+  struct SortIntervalStart : public std::binary_function<TRecord, TRecord, bool> {
+    inline bool operator()(TRecord const& s1, TRecord const& s2) const {
+      return s1.start < s2.start;
+    }
+  };
+
+
+  inline void
+  _insertInterval(std::vector<IntervalLabel>& cr, int32_t s, int32_t e, char strand, int32_t lid, int32_t) {
+    // Uniqueness not necessary because we flatten the interval map
+    cr.push_back(IntervalLabel(s, e, strand, lid));
+  }
+  
   // Structural variant record
   struct SV {
     int32_t chr;
@@ -170,6 +202,56 @@ namespace sansa
     return svlenval;
   }
 
+  inline bool
+  is_gff3(boost::filesystem::path const& f) {
+    std::ifstream in(f.string().c_str());
+    if (!in) return false;
+    in.close();
+
+    std::ifstream file(f.string().c_str(), std::ios_base::in | std::ios_base::binary);
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> dataIn;
+    dataIn.push(boost::iostreams::gzip_decompressor());
+    dataIn.push(file);
+    std::istream instream(&dataIn);
+    std::string gline;
+    std::getline(instream, gline);
+    bool gff = false;
+    if ((gline.size()>=5) && (gline.substr(0,5) == "##gff")) gff = true;
+    file.close();
+    return gff;
+  }
+
+  inline bool
+  is_gtf(boost::filesystem::path const& f) {
+    std::ifstream in(f.string().c_str());
+    if (!in) return false;
+    in.close();
+
+    std::ifstream file(f.string().c_str(), std::ios_base::in | std::ios_base::binary);
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> dataIn;
+    dataIn.push(boost::iostreams::gzip_decompressor());
+    dataIn.push(file);
+    std::istream instream(&dataIn);
+    std::string gline;
+    std::getline(instream, gline);
+    bool gtf = false;
+    if ((gline.size()>=2) && (gline.substr(0,2) == "#!")) gtf = true;
+    file.close();
+    return gtf;
+  }
+
+  inline bool
+  is_gz(boost::filesystem::path const& f) {
+    std::ifstream bfile(f.string().c_str(), std::ios_base::binary | std::ios::ate);
+    bfile.seekg(0, std::ios::beg);
+    char byte1;
+    bfile.read(&byte1, 1);
+    char byte2;
+    bfile.read(&byte2, 1);
+    bfile.close();
+    if ((byte1 == '\x1F') && (byte2 == '\x8B')) return true;
+    else return false;
+  }
   
   // Decode Orientation
   inline int32_t

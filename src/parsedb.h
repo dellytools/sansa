@@ -16,12 +16,12 @@ namespace sansa
 {
 
 
-  template<typename TConfig, typename TSV, typename TMap>
+  template<typename TConfig, typename TSV>
   inline bool
-  parseDB(TConfig& c, TSV& svs, TMap& chrMap) {
+  parseDB(TConfig& c, TSV& svs) {
 
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Parse annotation database" << std::endl;
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Parse SV annotation database" << std::endl;
     
     // Load bcf file
     htsFile* ifile = bcf_open(c.db.string().c_str(), "r");
@@ -61,7 +61,7 @@ namespace sansa
       if (rec->rid != lastRID) {
 	lastRID = rec->rid;
 	std::string chrName = bcf_hdr_id2name(hdr, rec->rid);
-	if (chrMap.find(chrName) == chrMap.end()) chrMap.insert(std::make_pair(chrName, rec->rid));
+	if (c.nchr.find(chrName) == c.nchr.end()) c.nchr.insert(std::make_pair(chrName, rec->rid));
       }
 
       // Only bi-allelic
@@ -115,7 +115,7 @@ namespace sansa
     // Remap chr names and ensure canonical order for translocations
     typedef std::map<int32_t, int32_t> TChrIdMap;
     TChrIdMap chrIdMap;
-    for(typename TChr2Map::iterator itc2 = chr2Map.begin(); itc2 != chr2Map.end(); ++itc2) chrIdMap.insert(std::make_pair(itc2->second, chrMap[itc2->first]));
+    for(typename TChr2Map::iterator itc2 = chr2Map.begin(); itc2 != chr2Map.end(); ++itc2) chrIdMap.insert(std::make_pair(itc2->second, c.nchr[itc2->first]));
     for(uint32_t i = 0; i < svs.size(); ++i) {
       svs[i].chr2 = chrIdMap[svs[i].chr2];
       if (svs[i].chr != svs[i].chr2) {
