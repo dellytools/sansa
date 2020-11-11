@@ -78,8 +78,8 @@ Using [delly](https://github.com/dellytools/delly) and the `INFO/CT` values one 
 | chrA | posStart | chrA | posEnd   | DEL    | 3to5 | geneA(0;+)   | geneB(0;+)   |
 | chrA | posStart | chrA | posEnd   | DEL    | 3to5 | geneC(0;-)   | geneD(0;-)   |
 | 21   | 39887792 | 21   | 42869743 | DEL    | 3to5 | ERG(0;-)     | TMPRSS2(0;-) |
-| chrA | posStart | chrA | posEnd   | BND    | 3to5 | geneA(0;+)   | geneB(0;+)   |
-| chrA | posStart | chrA | posEnd   | BND    | 3to5 | geneC(0;-)   | geneD(0;-)   |
+| chrA | posA     | chrB | posB     | BND    | 3to5 | geneA(0;+)   | geneB(0;+)   |
+| chrA | posA     | chrB | posB     | BND    | 3to5 | geneC(0;-)   | geneD(0;-)   |
 | 21   | 42867595 | 7    | 14027003 | BND    | 3to5 | TMPRSS2(0;-) | ETV1(0;-)    |
 
 ## Citation
