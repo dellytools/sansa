@@ -1,6 +1,6 @@
 # Sansa
 
-Structural variant (SV) annotation using database SVs
+Structural variant (SV) annotation.
 
 ## Installation
 
