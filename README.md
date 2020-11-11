@@ -69,7 +69,7 @@ Gene and SV annotation can be run in a single command.
 
 `sansa annotate -g Homo_sapiens.GRCh37.87.gtf.gz -d gnomad_v2.1_sv.sites.vcf.gz input.vcf.gz`
 
-## Discovering in-frame gene fusion candidates
+## Discovering gene fusion candidates
 
 Using [delly](https://github.com/dellytools/delly) and the `INFO/CT` values one can identify gene fusion candidates. Here is the mapping from gene strand to CT values with classical cancer genomics examples (GRCh37 coordinates).
 
