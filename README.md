@@ -60,6 +60,9 @@ You can also use the Ensembl gene id or annotate exons instead of genes.
 
 `sansa annotate -f exon -i exon_id -g Homo_sapiens.GRCh37.87.gff3.gz input.vcf.gz`
 
+Gene and SV annotation can be run in a single command.
+
+`sansa annotate -g Homo_sapiens.GRCh37.87.gtf.gz -d gnomad_v2.1_sv.sites.vcf.gz input.vcf.gz`
 
 
 ## Citation
