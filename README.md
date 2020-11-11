@@ -46,7 +46,7 @@ By default, SVs are only compared within the same SV type (DELs with DELs, INVs 
 
 ## Feature/Gene annotation
 
-Based on a distance cutoff (`-m`) [sansa](https://github.com/dellytools/sansa) matches SVs to nearby genes. The gene annotation file can be in [gtf/gff2](https://en.wikipedia.org/wiki/General_feature_format) or [gff3](https://en.wikipedia.org/wiki/General_feature_format) format.
+Based on a distance cutoff (`-t`) [sansa](https://github.com/dellytools/sansa) matches SVs to nearby genes. The gene annotation file can be in [gtf/gff2](https://en.wikipedia.org/wiki/General_feature_format) or [gff3](https://en.wikipedia.org/wiki/General_feature_format) format.
 
 `sansa annotate -g Homo_sapiens.GRCh37.87.gtf.gz input.vcf.gz`
 
