@@ -73,11 +73,11 @@ Gene and SV annotation can be run in a single command.
 
 Using [delly]((https://github.com/dellytools/delly) and the `INFO/CT` values one can identify gene fusion candidates. Here is the mapping from gene strand to CT values with examples (GRCh37 coordinates).
 
-| query.chr  | query.start  | query.chr2  | query.end  | query.svtype | query.ct | query.startfeature | query.endfeature |
-|------------|--------------|-------------|------------|--------------|----------|--------------------|------------------|
-| chrA       | posStart     | chrA        | posEnd     | DEL          | 3to5     | geneA(0;+)         | geneB(0;+)       |
-| chrA       | posStart     | chrA        | posEnd     | DEL          | 3to5     | geneC(0;-)         | geneD(0;-)       |
-| chr21      | 39887792     | chr21       | 42869743   | DEL          | 3to5     | ERG(0;-)           | TMPRSS2(0;-)     |
+| chr  | start    | chr2 | end      | svtype | ct   | startfeature | endfeature   |
+|------|----------|------|----------|--------|------|--------------|--------------|
+| chrA | posStart | chrA | posEnd   | DEL    | 3to5 | geneA(0;+)   | geneB(0;+)   |
+| chrA | posStart | chrA | posEnd   | DEL    | 3to5 | geneC(0;-)   | geneD(0;-)   |
+| 21   | 39887792 | 21   | 42869743 | DEL    | 3to5 | ERG(0;-)     | TMPRSS2(0;-) |
 
 
 ## Citation
