@@ -8,6 +8,7 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include <htslib/sam.h>
 #include <htslib/faidx.h>
 #include <htslib/vcf.h>
