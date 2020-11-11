@@ -71,7 +71,7 @@ Gene and SV annotation can be run in a single command.
 
 ## Discovering in-frame gene fusion candidates
 
-Using [delly]((https://github.com/dellytools/delly) and the `INFO/CT` values one can identify gene fusion candidates. Here is the mapping from gene strand to CT values with examples (GRCh37 coordinates).
+Using [delly](https://github.com/dellytools/delly) and the `INFO/CT` values one can identify gene fusion candidates. Here is the mapping from gene strand to CT values with examples (GRCh37 coordinates).
 
 | chr  | start    | chr2 | end      | svtype | ct   | startfeature | endfeature   |
 |------|----------|------|----------|--------|------|--------------|--------------|
