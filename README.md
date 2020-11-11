@@ -52,13 +52,14 @@ Based on a distance cutoff (`-t`) [sansa](https://github.com/dellytools/sansa) m
 
 `sansa annotate -i Name -g Homo_sapiens.GRCh37.87.gff3.gz input.vcf.gz`
 
-The output has 2 columns for genes near the SV start breakpoint and genes near the SV end breakpoint. For each gene, the output lists the gene name and in paranthesis the distance (negative values: preceeding SV breakpoint, 0: SV breakpoint within gene, positive values: suceeding breakpoint) and the strand of the gene (+/-/*).
+The output has 2 columns for genes near the SV start breakpoint and genes near the SV end breakpoint. For each gene, the output lists the gene name and in paranthesis the distance (negative values: before SV breakpoint, 0: SV breakpoint within gene, positive values: after SV breakpoint) and the strand of the gene (+/-/*).
 
 You can also use the Ensembl gene id or annotate exons instead of genes.
 
 `sansa annotate -i gene_id -g Homo_sapiens.GRCh37.87.gff3.gz input.vcf.gz`
 
 `sansa annotate -f exon -i exon_id -g Homo_sapiens.GRCh37.87.gff3.gz input.vcf.gz`
+
 
 
 ## Citation
