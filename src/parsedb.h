@@ -129,6 +129,7 @@ namespace sansa
 	}
       }
     }
+    bcf_destroy(rec);
 
     // Sort SVs
     sort(svs.begin(), svs.end(), SortSVs<SV>());
@@ -139,12 +140,9 @@ namespace sansa
 	
     // Close output VCF
     bcf_hdr_destroy(hdr_out);
-    hts_close(ofile);
-    
-    // Close file handles
     bcf_hdr_destroy(hdr);
+    hts_close(ofile);
     bcf_close(ifile);
-    bcf_destroy(rec);
     
     return true;
   }

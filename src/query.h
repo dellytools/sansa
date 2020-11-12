@@ -75,7 +75,7 @@ namespace sansa
 
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Query input SVs" << std::endl;
-    
+
     // Load bcf file
     htsFile* ifile = bcf_open(c.infile.string().c_str(), "r");
     if (ifile == NULL) {
@@ -150,7 +150,7 @@ namespace sansa
       if (c.gtfFileFormat != -1) geneAnnotation(c, gRegions, geneIds, refIndex, rec->pos + 1, refIndex2, endsv, featureBp1, featureBp2);
       if (featureBp1.empty()) featureBp1 = "NA";
       if (featureBp2.empty()) featureBp2 = "NA";
-      
+
       // Any breakpoint hit?
       typename TSV::iterator itSV = std::lower_bound(svs.begin(), svs.end(), SV(refIndex, std::max(0, startsv - c.bpwindow), refIndex2, endsv), SortSVs<SV>());
       int32_t bestID = -1;
@@ -202,10 +202,11 @@ namespace sansa
 	}
 	dataOut << id << '\t' << bcf_hdr_id2name(hdr, rec->rid) << '\t' << (rec->pos + 1) << '\t' << chr2Name << '\t' <<  endsv << '\t' << rec->d.id << '\t' << qualval << '\t' << svtval << '\t' << ctval << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2 << std::endl;
       }
-      
+
       // Successful parse
       ++parsedSV;
     }
+    bcf_destroy(rec);
 
     // Statistics
     now = boost::posix_time::second_clock::local_time();
@@ -214,10 +215,10 @@ namespace sansa
     // Close file handles
     dataOut.pop();
     dataOut.pop();
+
     bcf_hdr_destroy(hdr);
     bcf_close(ifile);
-    bcf_destroy(rec);
-    
+
     return true;
   }
 

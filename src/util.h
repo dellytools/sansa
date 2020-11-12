@@ -284,15 +284,25 @@ namespace sansa
   }
 
   template<typename TChrMap>
-  inline void
-  fixChrNames(TChrMap& chrMap) {
-    // Take care of 1 vs. chr1, X vs chrX, ...
-    int32_t maxRID = 1;
-    for(typename TChrMap::iterator itcm = chrMap.begin(); itcm != chrMap.end(); ++itcm) {
-      if (itcm->second > maxRID) maxRID = itcm->second + 1;
+  inline int32_t
+  chrMapSize(TChrMap const& chrMap) {
+    int32_t maxRID = 0;
+    for(typename TChrMap::const_iterator itcm = chrMap.begin(); itcm != chrMap.end(); ++itcm) {
+      if (itcm->second >= maxRID) maxRID = itcm->second + 1;
     }
-    std::vector<std::string> altName(maxRID, "NA");
-    for(typename TChrMap::iterator itcm = chrMap.begin(); itcm != chrMap.end(); ++itcm) {
+    return maxRID;
+  }
+    
+  
+  template<typename TConfig>
+  inline int32_t
+  fixChrNames(TConfig& c) {
+    typedef typename TConfig::TChrMap TChrMap;
+    
+    // Take care of 1 vs. chr1, X vs chrX, ...
+    int32_t maxRID = chrMapSize(c.nchr);
+    std::vector<std::string> altName(maxRID);
+    for(typename TChrMap::const_iterator itcm = c.nchr.begin(); itcm != c.nchr.end(); ++itcm) {
       std::string cn = itcm->first;
       if (cn.size() == 1) {
 	if (cn == "1") altName[itcm->second] = "chr1";
@@ -355,8 +365,9 @@ namespace sansa
 
     // Insert alternative names
     for(uint32_t i = 0; i < altName.size(); ++i) {
-      if (altName[i] != "NA") chrMap.insert(std::make_pair(altName[i], i));
+      if (!altName[i].empty()) c.nchr.insert(std::make_pair(altName[i], i));
     }
+    return maxRID;
   }
   
   // Output directory/file checks

@@ -69,14 +69,7 @@ namespace sansa
     }
 
     // Fix chr names
-    fixChrNames(c.nchr);
-
-    // Debug chr names
-    int32_t maxRID = 0;
-    for(AnnotateConfig::TChrMap::const_iterator itcm = c.nchr.begin(); itcm != c.nchr.end(); ++itcm) {
-      if ((int32_t) (itcm->second + 1) > maxRID) maxRID = itcm->second + 1;
-      //std::cerr << itcm->first << '=' << itcm->second << std::endl;
-    }
+    int32_t maxRID = fixChrNames(c);
 
     // Optionally parse GFF/GTF/BED file
     typedef std::vector<IntervalLabel> TChromosomeRegions;
