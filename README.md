@@ -1,7 +1,6 @@
 [![C/C++ CI](https://github.com/dellytools/sansa/workflows/C/C++%20CI/badge.svg)](https://github.com/dellytools/sansa/actions)
 [![Docker CI](https://github.com/dellytools/sansa/workflows/Docker%20CI/badge.svg)](https://hub.docker.com/r/dellytools/sansa/)
 [![GitHub license](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/dellytools/sansa/blob/master/LICENSE)
-[![GitHub Releases](https://img.shields.io/github/release/dellytools/sansa.svg)](https://github.com/dellytools/sansa/releases)
 
 # Sansa
 
