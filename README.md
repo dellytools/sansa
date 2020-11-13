@@ -73,22 +73,32 @@ Gene and SV annotation can be run in a single command.
 
 Using [delly](https://github.com/dellytools/delly) and the `INFO/CT` values one can identify gene fusion candidates. Here is the mapping from gene strand to CT values with classical cancer genomics examples (GRCh37 coordinates).
 
-| chr  | start    | chr2 | end       | svtype | ct   | startfeature | endfeature   |
-|------|----------|------|-----------|--------|------|--------------|--------------|
-| chrA | posStart | chrA | posEnd    | DEL    | 3to5 | geneA(0;+)   | geneB(0;+)   |
-| chrA | posStart | chrA | posEnd    | DEL    | 3to5 | geneC(0;-)   | geneD(0;-)   |
-| 21   | 39887792 | 21   | 42869743  | DEL    | 3to5 | ERG(0;-)     | TMPRSS2(0;-) |
-| chrA | posA     | chrB | posB      | BND    | 3to3 | geneA(0;+)   | geneB(0;-)   |
-| chrA | posA     | chrB | posB      | BND    | 3to3 | geneC(0;-)   | geneD(0;+)   |
-| chrA | posA     | chrB | posB      | BND    | 3to5 | geneA(0;+)   | geneB(0;+)   |
-| chrA | posA     | chrB | posB      | BND    | 3to5 | geneC(0;-)   | geneD(0;-)   |
-| 21   | 42867595 | 7    | 14027003  | BND    | 3to5 | TMPRSS2(0;-) | ETV1(0;-)    |
-| chrA | posA     | chrB | posB      | BND    | 5to5 | geneA(0;+)   | geneB(0;-)   |
-| chrA | posA     | chrB | posB      | BND    | 5to5 | geneC(0;-)   | geneD(0;+)   |
-| chrA | posA     | chrB | posB      | BND    | 5to3 | geneA(0;+)   | geneB(0;+)   |
-| chrA | posA     | chrB | posB      | BND    | 5to3 | geneC(0;-)   | geneD(0;-)   |
-| 21   | 39826990 | 1    | 205637229 | BND    | 5to3 | ERG(0;-)     | SLC45A3(0;-) |
-
+| chr  | start     | chr2 | end       | svtype | ct   | startfeature  | endfeature    |
+|------|-----------|------|-----------|--------|------|---------------|---------------|
+| chrA | posStart  | chrA | posEnd    | INV    | 3to3 | geneA(0;+)    | geneB(0;-)    |
+| chrA | posStart  | chrA | posEnd    | INV    | 3to3 | geneC(0;-)    | geneD(0;+)    |
+| 10   | 89672219  | 10   | 90267336  | INV    | 3to3 | PTEN(0;+)     | RNLS(0;-)     |
+| chrA | posStart  | chrA | posEnd    | DEL    | 3to5 | geneA(0;+)    | geneB(0;+)    |
+| chrA | posStart  | chrA | posEnd    | DEL    | 3to5 | geneC(0;-)    | geneD(0;-)    |
+| 21   | 39887792  | 21   | 42869743  | DEL    | 3to5 | ERG(0;-)      | TMPRSS2(0;-)  |
+| chrA | posStart  | chrA | posEnd    | DUP    | 5to3 | geneA(0;+)    | geneB(0;+)    |
+| chrA | posStart  | chrA | posEnd    | DUP    | 5to3 | geneC(0;-)    | geneD(0;-)    |
+| 7    | 138547350 | 7    | 140491430 | DUP    | 5to3 | KIAA1549(0;-) | BRAF(0;-)     |
+| chrA | posStart  | chrA | posEnd    | INV    | 5to5 | geneA(0;+)    | geneB(0;-)    |
+| chrA | posStart  | chrA | posEnd    | INV    | 5to5 | geneC(0;-)    | geneD(0;+)    |
+| 8    | 32139712  | 8    | 33359541  | INV    | 5to5 | NRG1(0;+)     | TTI2(0;-)     |
+| chrA | posA      | chrB | posB      | BND    | 3to3 | geneA(0;+)    | geneB(0;-)    |
+| chrA | posA      | chrB | posB      | BND    | 3to3 | geneC(0;-)    | geneD(0;+)    |
+| 14   | 68316364  | 5    | 58914908  | BND    | 3to3 | RAD51B(0;+)   | PDE4D(0;-)    |
+| chrA | posA      | chrB | posB      | BND    | 3to5 | geneA(0;+)    | geneB(0;+)    |
+| chrA | posA      | chrB | posB      | BND    | 3to5 | geneC(0;-)    | geneD(0;-)    |
+| 21   | 42867595  | 7    | 14027003  | BND    | 3to5 | TMPRSS2(0;-)  | ETV1(0;-)     |
+| chrA | posA      | chrB | posB      | BND    | 5to3 | geneA(0;+)    | geneB(0;+)    |
+| chrA | posA      | chrB | posB      | BND    | 5to3 | geneC(0;-)    | geneD(0;-)    |
+| 21   | 39826990  | 1    | 205637229 | BND    | 5to3 | ERG(0;-)      | SLC45A3(0;-)  |
+| chrA | posA      | chrB | posB      | BND    | 5to5 | geneA(0;+)    | geneB(0;-)    |
+| chrA | posA      | chrB | posB      | BND    | 5to5 | geneC(0;-)    | geneD(0;+)    |
+| 3    | 169190498 | 2    | 47689038  | BND    | 5to5 | MECOM(0;-)    | MSH2(0;+)     |
 
 ## Citation
 

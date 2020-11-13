@@ -169,7 +169,7 @@ namespace sansa
   inline int32_t
   deriveEndPos(bcf1_t* rec, std::string const& svtval, int32_t const pos2val, int32_t const endval) {
     if ((pos2val != -1) && (endval != -1)) {
-      if (svtval == "BND") return pos2val;
+      if ((svtval == "BND") || (svtval == "TRA")) return pos2val;
       else return endval;
     }
     else if (pos2val != -1) return pos2val;
@@ -257,7 +257,7 @@ namespace sansa
   // Decode Orientation
   inline int32_t
   _decodeOrientation(std::string const& value, std::string const& svt) {
-    if (svt == "BND") {
+    if ((svt == "BND") || (svt == "TRA")) {
       if (value=="NA") return DELLY_SVT_TRANS + 0;
       else if (value=="3to3") return DELLY_SVT_TRANS + 0;
       else if (value=="5to5") return DELLY_SVT_TRANS + 1;
