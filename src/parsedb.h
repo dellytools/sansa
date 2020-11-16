@@ -86,7 +86,9 @@ namespace sansa
 
       // Derive proper END and SVLEN
       int32_t endsv = deriveEndPos(rec, svtval, pos2val, endval);
-      int32_t svlength = deriveSvLength(rec, svtval, endval, svlenval);
+      bool parseALTBND = parseAltBnd(hdr, rec, svtval, ctval, chr2Name, endsv);
+      if (!parseALTBND) parsed = false;
+      int32_t svlength = deriveSvLength(rec, svtval, endsv, svlenval);
       
       // Numerical SV type
       int32_t svtint = _decodeOrientation(ctval, svtval);
@@ -118,16 +120,7 @@ namespace sansa
     for(typename TChr2Map::iterator itc2 = chr2Map.begin(); itc2 != chr2Map.end(); ++itc2) chrIdMap.insert(std::make_pair(itc2->second, c.nchr[itc2->first]));
     for(uint32_t i = 0; i < svs.size(); ++i) {
       svs[i].chr2 = chrIdMap[svs[i].chr2];
-      if (svs[i].chr != svs[i].chr2) {
-	if (svs[i].chr < svs[i].chr2) {
-	  int32_t tmpChr = svs[i].chr;
-	  svs[i].chr = svs[i].chr2;
-	  svs[i].chr2 = tmpChr;
-	  int32_t tmpPos = svs[i].svStart;
-	  svs[i].svStart = svs[i].svEnd;
-	  svs[i].svEnd = tmpPos;
-	}
-      }
+      _makeCanonical(svs[i]);
     }
     bcf_destroy(rec);
 

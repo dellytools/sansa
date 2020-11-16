@@ -9,6 +9,7 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <boost/lexical_cast.hpp>
 #include <htslib/sam.h>
 #include <htslib/faidx.h>
 #include <htslib/vcf.h>
@@ -187,6 +188,63 @@ namespace sansa
     return -1;
   }
 
+  inline bool
+  parseAltBnd(bcf_hdr_t* hdr, bcf1_t* rec, std::string& svtval, std::string& ctval, std::string& chr2Name, int32_t& endval) {
+    if (endval != -1) return true;  // Done.
+    if (svtval != "BND") return false;
+    std::string altAllele = rec->d.allele[1];
+    std::size_t found1 = altAllele.find_first_of("[");
+    std::size_t found2 = altAllele.find_last_of("[");
+    if ((found1 == std::string::npos) && (found2 == std::string::npos)) {
+      found1 = altAllele.find_first_of("]");
+      found2 = altAllele.find_last_of("]");
+    }
+    if ((found1 == std::string::npos) || (found2 == std::string::npos)) return false;
+    if (found1 + 1 >= found2) return false;
+    altAllele = altAllele.substr(found1 + 1, found2 - found1 - 1);
+    std::size_t sepa = altAllele.find_first_of(":");
+    if (sepa == std::string::npos) return false;
+    chr2Name = altAllele.substr(0, sepa);
+    endval = boost::lexical_cast<int32_t>(altAllele.substr(sepa+1));
+    std::string chr1Name = bcf_hdr_id2name(hdr, rec->rid);
+    if (chr1Name == chr2Name) {
+      // Fix SV type
+      int32_t pos = rec->pos + 1;
+      if (pos > endval) return false;
+      std::string svclass = "NA";
+      if (_parse_bcf_string(hdr, rec, "SVCLASS", svclass)) {
+	if (svclass == "DEL") {
+	  svtval = "DEL";
+	  ctval = "3to5";
+	} else if (svclass == "DUP") {
+	  svtval = "DUP";
+	  ctval = "5to3";
+	} else if (svclass == "h2hINV") {
+	  svtval = "INV";
+	  ctval = "3to3";
+	} else if (svclass == "t2tINV") {
+	  svtval = "INV";
+	  ctval = "5to5";
+	} else if (svclass == "INS") {
+	  svtval = "INS";
+	  ctval = "NtoN";
+	  endval = rec->pos + 2;
+	}
+      }
+      if (svtval == "BND") {
+	// Still not fixed, try CT
+	if (ctval == "3to5") svtval = "DEL";
+	else if (ctval == "5to3") svtval = "DUP";
+	else if (ctval == "3to3") svtval = "INV";
+	else if (ctval == "5to5") svtval = "INV";
+	else if (ctval == "NtoN") svtval = "INS";
+	else return false;
+      }	
+      //std::cerr << std::string(rec->d.allele[1]) << ',' << chr1Name << ',' << pos << ',' << chr2Name << ',' << endval << ',' << svtval << ',' << ctval << ',' << svclass << std::endl;
+    }
+    return true;
+  }
+
   inline int32_t
   deriveSvLength(bcf1_t* rec, std::string const& svtval, int32_t const endval, int32_t const svlenval) {
     if (svlenval != 0) {
@@ -203,6 +261,24 @@ namespace sansa
     return svlenval;
   }
 
+
+  inline void
+  _makeCanonical(SV& sv) {
+    if (sv.chr != sv.chr2) {
+      if (sv.chr < sv.chr2) {
+	int32_t tmpChr = sv.chr;
+	sv.chr = sv.chr2;
+	sv.chr2 = tmpChr;
+	int32_t tmpPos = sv.svStart;
+	sv.svStart = sv.svEnd;
+	sv.svEnd = tmpPos;
+	if (sv.svt == DELLY_SVT_TRANS + 2) sv.svt = DELLY_SVT_TRANS + 3;
+	else if (sv.svt == DELLY_SVT_TRANS + 3) sv.svt = DELLY_SVT_TRANS + 2;
+      }
+    }
+  }
+
+  
   inline bool
   is_gff3(boost::filesystem::path const& f) {
     std::ifstream in(f.string().c_str());
