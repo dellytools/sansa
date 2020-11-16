@@ -329,6 +329,33 @@ namespace sansa
     if ((byte1 == '\x1F') && (byte2 == '\x8B')) return true;
     else return false;
   }
+
+  inline std::string
+  _translateSvType(int32_t const svt) {
+    if (svt == 0) return "INV";
+    else if (svt == 1) return "INV";
+    else if (svt == 2) return "DEL";
+    else if (svt == 3) return "DUP";
+    else if (svt == 4) return "INS";
+    else if (svt == 9) return "MCNV";
+    else if (svt == 10) return "CPX";
+    else if (svt == 11) return "CTX";
+    else return "BND";
+  }
+
+  inline std::string
+  _translateCt(int32_t const svt) {
+    if (svt == 0) return "3to3";
+    else if (svt == 1) return "5to5";
+    else if (svt == 2) return "3to5";
+    else if (svt == 3) return "5to3";
+    else if (svt == 4) return "NtoN";
+    else if (svt == 5) return "3to3";
+    else if (svt == 6) return "5to5";
+    else if (svt == 7) return "3to5";
+    else if (svt == 8) return "5to3";
+    else return "NA";
+  }    
   
   // Decode Orientation
   inline int32_t

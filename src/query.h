@@ -88,7 +88,7 @@ namespace sansa
     boost::iostreams::filtering_ostream dataOut;
     dataOut.push(boost::iostreams::gzip_compressor());
     dataOut.push(boost::iostreams::file_sink(c.matchfile.string().c_str(), std::ios_base::out | std::ios_base::binary));
-    dataOut << "[1]ANNOID\tquery.chr\tquery.start\tquery.chr2\tquery.end\tquery.id\tquery.qual\tquery.svt\tquery.svlen\tquery.startfeature\tquery.endfeature" << std::endl;
+    dataOut << "[1]ANNOID\tquery.chr\tquery.start\tquery.chr2\tquery.end\tquery.id\tquery.qual\tquery.svtype\tquery.ct\tquery.svlen\tquery.startfeature\tquery.endfeature" << std::endl;
     
     // Parse VCF records
     bcf1_t* rec = bcf_init();
@@ -192,7 +192,7 @@ namespace sansa
 	  std::string padNumber = boost::lexical_cast<std::string>(itSV->id);
 	  padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
 	  id += padNumber;
-	  dataOut << id << '\t' << bcf_hdr_id2name(hdr, qsv.chr) << '\t' << qsv.svStart << '\t' << bcf_hdr_id2name(hdr, qsv.chr2) << '\t' <<  qsv.svEnd << '\t' << rec->d.id << '\t' << qualval << '\t' << qsv.svt << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2 << std::endl;
+	  dataOut << id << '\t' << bcf_hdr_id2name(hdr, qsv.chr) << '\t' << qsv.svStart << '\t' << bcf_hdr_id2name(hdr, qsv.chr2) << '\t' <<  qsv.svEnd << '\t' << rec->d.id << '\t' << qualval << '\t' << _translateSvType(qsv.svt) << '\t' << _translateCt(qsv.svt) << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2 << std::endl;
 	}
       }
       if (((c.bestMatch) && (bestID != -1)) || ((c.reportNoMatch) && (noMatch))) {
@@ -204,7 +204,7 @@ namespace sansa
 	  padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
 	  id += padNumber;
 	}
-	dataOut << id << '\t' << bcf_hdr_id2name(hdr, qsv.chr) << '\t' << qsv.svStart << '\t' << bcf_hdr_id2name(hdr, qsv.chr2) << '\t' <<  qsv.svEnd << '\t' << rec->d.id << '\t' << qualval << '\t' << qsv.svt << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2 << std::endl;	
+	dataOut << id << '\t' << bcf_hdr_id2name(hdr, qsv.chr) << '\t' << qsv.svStart << '\t' << bcf_hdr_id2name(hdr, qsv.chr2) << '\t' <<  qsv.svEnd << '\t' << rec->d.id << '\t' << qualval << '\t' << _translateSvType(qsv.svt) << '\t' << _translateCt(qsv.svt) << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2 << std::endl;
       }
 
       // Successful parse
