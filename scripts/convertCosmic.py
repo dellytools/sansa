@@ -69,6 +69,12 @@ with open(args.out, "a") as outf:
                     svStart = int(pos[0])
                     svEnd = int(pos[1])
                     svtype = "SCNA"
+                    if svStart == 0:
+                        svStart = 1
+                    if svStart > svEnd:
+                        tmpPos = svStart
+                        svStart = svEnd
+                        svEnd = tmpPos
             else:
                 # Assume breakpoint format
                 chr1 = row["Chrom From"]
