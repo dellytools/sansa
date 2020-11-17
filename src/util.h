@@ -340,6 +340,7 @@ namespace sansa
     else if (svt == 9) return "MCNV";
     else if (svt == 10) return "CPX";
     else if (svt == 11) return "CTX";
+    else if (svt == 12) return "SCNA";
     else return "BND";
   }
 
@@ -376,6 +377,7 @@ namespace sansa
 	else if (svt == "MCNV") return 9;  // Unused SVTs
 	else if (svt == "CPX") return 10;
 	else if (svt == "CTX") return 11;
+	else if (svt == "SCNA") return 12;
 	else return -1;
       }
       else if (value=="3to3") return 0;

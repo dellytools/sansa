@@ -6,8 +6,8 @@ Convert COSMIC breakpoints to delly VCF notation
 
 Sort, compress and index:
 
-`vcf-sort out.vcf | bgzip > cosmic.vcf.gz && tabix cosmic.vcf.gz`
+`bcftools sort -O b -o cosmic.bcf out.vcf && bcftools index cosmic.bcf`
 
 Some COSMIC SV type encodings are not entirely clear to me. Hence, please use `-n` if you use cosmic data as the SV annotation database.
 
-`sansa annotate -n -d cosmic.vcf.gz input.vcf.gz`
+`sansa annotate -n -d cosmic.bcf input.vcf.gz`
