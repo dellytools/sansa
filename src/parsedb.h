@@ -64,9 +64,6 @@ namespace sansa
 	if (c.nchr.find(chrName) == c.nchr.end()) c.nchr.insert(std::make_pair(chrName, rec->rid));
       }
 
-      // Only bi-allelic
-      if (rec->n_allele != 2) parsed = false;
-
       // Unpack INFO
       bcf_unpack(rec, BCF_UN_INFO);
 

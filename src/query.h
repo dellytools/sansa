@@ -108,9 +108,6 @@ namespace sansa
       }
       if (refIndex == -1) continue;
       
-      // Only bi-allelic
-      if (rec->n_allele != 2) continue;
-
       // Unpack INFO
       bcf_unpack(rec, BCF_UN_INFO);
 
