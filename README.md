@@ -10,16 +10,17 @@ Structural variant (SV) annotation.
 
 ## Installation
 
-The easiest way to get sansa is to download a statically linked binary from the [sansa github release page](https://github.com/dellytools/sansa/releases/) or using [bioconda](https://anaconda.org/bioconda/sansa). You can also build sansa from source using a recursive clone and make.
+The easiest way to get sansa is to download a statically linked binary from the [sansa github release page](https://github.com/dellytools/sansa/releases/) or using [bioconda](https://anaconda.org/bioconda/sansa).
+
+`conda install -c bioconda sansa`
+
+You can also build sansa from source using a recursive clone and make.
 
 `git clone --recursive https://github.com/dellytools/sansa.git`
 
 `cd sansa/`
 
 `make all`
-
-or from [bioconda](https://anaconda.org/bioconda/sansa):  
-`conda install -c bioconda sansa`
 
 ## SV annotation
 
