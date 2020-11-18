@@ -18,6 +18,9 @@ The easiest way to get sansa is to download a statically linked binary from the 
 
 `make all`
 
+or from [bioconda](https://anaconda.org/bioconda/sansa):  
+`conda install -c bioconda sansa`
+
 ## SV annotation
 
 Download an annotation database. Examples are [gnomAD-SV](https://gnomad.broadinstitute.org/) or [1000 Genomes phase 3](https://www.internationalgenome.org/phase-3-structural-variant-dataset) and then run the annotation.
