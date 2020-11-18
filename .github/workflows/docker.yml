@@ -23,5 +23,3 @@ jobs:
         with:
           push: true
           tags: dellytools/sansa:latest
-     -  name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
