@@ -1,3 +1,5 @@
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square)](http://bioconda.github.io/recipes/sansa/README.html)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/sansa/badges/downloads.svg)](https://anaconda.org/bioconda/sansa)
 [![C/C++ CI](https://github.com/dellytools/sansa/workflows/C/C++%20CI/badge.svg)](https://github.com/dellytools/sansa/actions)
 [![Docker CI](https://github.com/dellytools/sansa/workflows/Docker%20CI/badge.svg)](https://hub.docker.com/r/dellytools/sansa/)
 [![GitHub license](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/dellytools/sansa/blob/master/LICENSE)
@@ -7,6 +9,8 @@
 Structural variant (SV) annotation.
 
 ## Installation
+
+The easiest way to get sansa is to download a statically linked binary from the [sansa github release page](https://github.com/dellytools/sansa/releases/) or using [bioconda](https://anaconda.org/bioconda/sansa). You can also build sansa from source using a recursive clone and make.
 
 `git clone --recursive https://github.com/dellytools/sansa.git`
 
