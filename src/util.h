@@ -337,10 +337,11 @@ namespace sansa
     else if (svt == 2) return "DEL";
     else if (svt == 3) return "DUP";
     else if (svt == 4) return "INS";
-    else if (svt == 9) return "MCNV";
+    else if (svt == 9) return "CNV";
     else if (svt == 10) return "CPX";
     else if (svt == 11) return "CTX";
     else if (svt == 12) return "SCNA";
+    else if (svt == 13) return "MCNV";
     else return "BND";
   }
 
@@ -374,10 +375,11 @@ namespace sansa
 	else if (svt == "INV") return 0;
 	else if (svt == "DUP") return 3;
 	else if (svt == "INS") return 4;
-	else if (svt == "MCNV") return 9;  // Unused SVTs
+	else if (svt == "CNV") return 9;  
 	else if (svt == "CPX") return 10;
 	else if (svt == "CTX") return 11;
 	else if (svt == "SCNA") return 12;
+	else if (svt == "MCNV") return 13;
 	else return -1;
       }
       else if (value=="3to3") return 0;
