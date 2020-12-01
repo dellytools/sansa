@@ -122,6 +122,9 @@ namespace sansa
     bcf_hdr_destroy(hdr);
     hts_close(ofile);
     bcf_close(ifile);
+
+    // Build BCF index
+    bcf_index_build(c.annofile.string().c_str(), 14);
     
     return true;
   }
