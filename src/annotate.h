@@ -58,6 +58,32 @@ namespace sansa
     ProfilerStart("sansa.prof");
 #endif
 
+    // Unify sequence dictionaries
+    int32_t maxRID;
+    uint32_t numseq = 0;
+    for(uint32_t k = 0; k < 2; ++k) {
+      htsFile* ifile = NULL;
+      if (k == 0) ifile = bcf_open(c.db.string().c_str(), "r");
+      else ifile = bcf_open(c.infile.string().c_str(), "r");
+      bcf_hdr_t* hdr = bcf_hdr_read(ifile);
+      int32_t nseq=0;
+      const char** seqnames = bcf_hdr_seqnames(hdr, &nseq);
+      for(int32_t i = 0; i<nseq;++i) {
+	std::string chrName(bcf_hdr_id2name(hdr, i));
+	if (c.nchr.find(chrName) == c.nchr.end()) c.nchr[chrName] = numseq++;
+      }
+      if (seqnames!=NULL) free(seqnames);
+      bcf_hdr_destroy(hdr);
+      bcf_close(ifile);
+
+      // Fix chrX vs X naming inconsistencies
+      maxRID = fixChrNames(c);
+
+      // Debug
+      //typedef typename TConfig::TChrMap TChrMap;
+      //for(typename TChrMap::const_iterator itcm = c.nchr.begin(); itcm != c.nchr.end(); ++itcm) std::cerr << itcm->first << ',' << itcm->second << std::endl;
+    }
+
     // Structural variants
     typedef std::vector<SV> TSV;
     TSV svs;
@@ -67,9 +93,6 @@ namespace sansa
       std::cerr << "Sansa couldn't parse database!" << std::endl;
       return 1;
     }
-
-    // Fix chr names
-    int32_t maxRID = fixChrNames(c);
 
     // Optionally parse GFF/GTF/BED file
     typedef std::vector<IntervalLabel> TChromosomeRegions;

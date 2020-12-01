@@ -92,34 +92,34 @@ namespace sansa
     
     // Parse VCF records
     bcf1_t* rec = bcf_init();
-    int32_t lastRID = -1;
-    int32_t sitecount = 0;
     int32_t parsedSV = 0;
+    int32_t sitecount = 0;
+    int32_t lastRID = -1;
     int32_t refIndex = -1;
     while (bcf_read(ifile, hdr, rec) == 0) {
+      int32_t startsv = rec->pos + 1;
+      bool parsed = true;
+
+      // Count records
       ++sitecount;
 
       // New chromosome?
       if (rec->rid != lastRID) {
 	lastRID = rec->rid;
-	std::string chrName = bcf_hdr_id2name(hdr, rec->rid);	
-	if (c.nchr.find(chrName) == c.nchr.end()) refIndex = -1;
-	else refIndex = c.nchr[chrName];
+	std::string chrName = bcf_hdr_id2name(hdr, rec->rid);
+	refIndex = c.nchr[chrName];
       }
-      if (refIndex == -1) continue;
       
       // Unpack INFO
       bcf_unpack(rec, BCF_UN_INFO);
 
       // Parse INFO fields
       std::string svtval = "NA";
-      if (!_parseSVTYPE(hdr, rec, svtval)) continue;
+      if (!_parseSVTYPE(hdr, rec, svtval)) parsed = false;
       std::string ctval("NA");
       _parse_bcf_string(hdr, rec, "CT", ctval);
       std::string chr2Name(bcf_hdr_id2name(hdr, rec->rid));
-      if (_parse_bcf_string(hdr, rec, "CHR2", chr2Name)) {
-	if (c.nchr.find(chr2Name) == c.nchr.end()) continue;
-      }
+      _parse_bcf_string(hdr, rec, "CHR2", chr2Name);
       int32_t pos2val = -1;
       _parse_bcf_int32(hdr, rec, "POS2", pos2val);
       int32_t endval = -1;
@@ -130,82 +130,83 @@ namespace sansa
       // Derive proper END and SVLEN
       int32_t endsv = deriveEndPos(rec, svtval, pos2val, endval);
       bool parseALTBND = parseAltBnd(hdr, rec, svtval, ctval, chr2Name, endsv);
-      if (!parseALTBND) continue;
-      int32_t refIndex2 = c.nchr[chr2Name];
+      if (!parseALTBND) parsed = false;
       int32_t svlength = deriveSvLength(rec, svtval, endsv, svlenval);
 
       // Numerical SV type
       int32_t svtint = _decodeOrientation(ctval, svtval);
-      if (svtint == -1) continue;
+      if (svtint == -1) parsed = false;
       int32_t qualval = 0;
       if (rec->qual > 0) qualval = (int32_t) (rec->qual);
-      //std::cerr << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" << endsv << "\t" << rec->d.id << "\t" << qualval << "\t" << svtval << "\t" << ctval << "\t" << svtint << "\t" << svlength << std::endl;
+      //std::cerr << parsed << "\t" << bcf_hdr_id2name(hdr, rec->rid) << "\t" << (rec->pos + 1) << "\t" << chr2Name << "\t" << endsv << "\t" << rec->d.id << "\t" << qualval << "\t" << svtval << "\t" << ctval << "\t" << svtint << "\t" << svlength << std::endl;
 
       // Generate query SV
-      SV qsv = SV(refIndex, rec->pos + 1, refIndex2, endsv, 0, qualval, svtint, svlength);
-      _makeCanonical(qsv);
+      if (parsed) { 
+	SV qsv = SV(refIndex, startsv, c.nchr[chr2Name], endsv, 0, qualval, svtint, svlength);
+	_makeCanonical(qsv);
             
-      // Annotate genes
-      std::string featureBp1 = "";
-      std::string featureBp2 = "";
-      if (c.gtfFileFormat != -1) geneAnnotation(c, gRegions, geneIds, qsv.chr, qsv.svStart, qsv.chr2, qsv.svEnd, featureBp1, featureBp2);
-      if (featureBp1.empty()) featureBp1 = "NA";
-      if (featureBp2.empty()) featureBp2 = "NA";
+	// Annotate genes
+	std::string featureBp1 = "";
+	std::string featureBp2 = "";
+	if (c.gtfFileFormat != -1) geneAnnotation(c, gRegions, geneIds, qsv.chr, qsv.svStart, qsv.chr2, qsv.svEnd, featureBp1, featureBp2);
+	if (featureBp1.empty()) featureBp1 = "NA";
+	if (featureBp2.empty()) featureBp2 = "NA";
 
-      // Any breakpoint hit?
-      typename TSV::iterator itSV = std::lower_bound(svs.begin(), svs.end(), SV(qsv.chr, std::max(0, qsv.svStart - c.bpwindow), qsv.chr2, qsv.svEnd), SortSVs<SV>());
-      int32_t bestID = -1;
-      float bestScore = -1;
-      bool noMatch = true;
-      for(; itSV != svs.end(); ++itSV) {	
-	int32_t startDiff = std::abs(itSV->svStart - qsv.svStart);
-	if (startDiff > c.bpwindow) break;
-	if (itSV->chr2 != qsv.chr2) continue;
-	if ((c.matchSvType) && (itSV->svt != qsv.svt)) continue;
-	int32_t endDiff = std::abs(itSV->svEnd - qsv.svEnd);
-	if (endDiff > c.bpwindow) continue;
-	if (itSV->id == -1) continue;
-	float score = 0;
-	if ((itSV->svlen > 0) && (qsv.svlen > 0)) {
-	  float rat = itSV->svlen / qsv.svlen;
-	  if (qsv.svlen < itSV->svlen) rat = qsv.svlen / itSV->svlen;
-	  if (rat < c.sizediff) continue;
-	  score += rat;
-	}
-	
-	// Found match
-	noMatch = false;
-	if (c.bestMatch) {
-	  if (c.bpwindow > 0) {
-	    if (startDiff > endDiff) score += (1 - float(startDiff) / (float(c.bpwindow)));
-	    else score += (1 - float(endDiff) / (float(c.bpwindow)));
-	  } else score += 1;
-	  if (score > bestScore) {
-	    bestScore = score;
-	    bestID = itSV->id;
+	// Any breakpoint hit?
+	typename TSV::iterator itSV = std::lower_bound(svs.begin(), svs.end(), SV(qsv.chr, std::max(0, qsv.svStart - c.bpwindow), qsv.chr2, qsv.svEnd), SortSVs<SV>());
+	int32_t bestID = -1;
+	float bestScore = -1;
+	bool noMatch = true;
+	for(; itSV != svs.end(); ++itSV) {	
+	  int32_t startDiff = std::abs(itSV->svStart - qsv.svStart);
+	  if (startDiff > c.bpwindow) break;
+	  if (itSV->chr2 != qsv.chr2) continue;
+	  if ((c.matchSvType) && (itSV->svt != qsv.svt)) continue;
+	  int32_t endDiff = std::abs(itSV->svEnd - qsv.svEnd);
+	  if (endDiff > c.bpwindow) continue;
+	  if (itSV->id == -1) continue;
+	  float score = 0;
+	  if ((itSV->svlen > 0) && (qsv.svlen > 0)) {
+	    float rat = itSV->svlen / qsv.svlen;
+	    if (qsv.svlen < itSV->svlen) rat = qsv.svlen / itSV->svlen;
+	    if (rat < c.sizediff) continue;
+	    score += rat;
 	  }
-	} else {
+	
+	  // Found match
+	  noMatch = false;
+	  if (c.bestMatch) {
+	    if (c.bpwindow > 0) {
+	      if (startDiff > endDiff) score += (1 - float(startDiff) / (float(c.bpwindow)));
+	      else score += (1 - float(endDiff) / (float(c.bpwindow)));
+	    } else score += 1;
+	    if (score > bestScore) {
+	      bestScore = score;
+	      bestID = itSV->id;
+	    }
+	  } else {
+	    std::string id("id");
+	    std::string padNumber = boost::lexical_cast<std::string>(itSV->id);
+	    padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
+	    id += padNumber;
+	    dataOut << id << '\t' << bcf_hdr_id2name(hdr, rec->rid) << '\t' << startsv << '\t' << chr2Name << '\t' <<  endsv << '\t' << rec->d.id << '\t' << qualval << '\t' << _translateSvType(qsv.svt) << '\t' << _translateCt(qsv.svt) << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2 << std::endl;
+	  }
+	}
+	if (((c.bestMatch) && (bestID != -1)) || ((c.reportNoMatch) && (noMatch))) {
 	  std::string id("id");
-	  std::string padNumber = boost::lexical_cast<std::string>(itSV->id);
-	  padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
-	  id += padNumber;
-	  dataOut << id << '\t' << bcf_hdr_id2name(hdr, qsv.chr) << '\t' << qsv.svStart << '\t' << bcf_hdr_id2name(hdr, qsv.chr2) << '\t' <<  qsv.svEnd << '\t' << rec->d.id << '\t' << qualval << '\t' << _translateSvType(qsv.svt) << '\t' << _translateCt(qsv.svt) << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2 << std::endl;
+	  if (noMatch) {
+	    id = "None";
+	  } else {
+	    std::string padNumber = boost::lexical_cast<std::string>(bestID);
+	    padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
+	    id += padNumber;
+	  }
+	  dataOut << id << '\t' << bcf_hdr_id2name(hdr, rec->rid) << '\t' << startsv << '\t' << chr2Name << '\t' << endsv << '\t' << rec->d.id << '\t' << qualval << '\t' << _translateSvType(qsv.svt) << '\t' << _translateCt(qsv.svt) << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2 << std::endl;
 	}
-      }
-      if (((c.bestMatch) && (bestID != -1)) || ((c.reportNoMatch) && (noMatch))) {
-	std::string id("id");
-	if (noMatch) {
-	  id = "None";
-	} else {
-	  std::string padNumber = boost::lexical_cast<std::string>(bestID);
-	  padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
-	  id += padNumber;
-	}
-	dataOut << id << '\t' << bcf_hdr_id2name(hdr, qsv.chr) << '\t' << qsv.svStart << '\t' << bcf_hdr_id2name(hdr, qsv.chr2) << '\t' <<  qsv.svEnd << '\t' << rec->d.id << '\t' << qualval << '\t' << _translateSvType(qsv.svt) << '\t' << _translateCt(qsv.svt) << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2 << std::endl;
-      }
 
-      // Successful parse
-      ++parsedSV;
+	// Successful parse
+	++parsedSV;
+      }
     }
     bcf_destroy(rec);
 

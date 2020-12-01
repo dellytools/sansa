@@ -41,15 +41,12 @@ namespace sansa
       return false;
     }
 
-    // Temporary chr2 map until we have seen all chromosomes
-    typedef std::map<std::string, int32_t> TChr2Map;
-    TChr2Map chr2Map;
-    
     // Parse VCF records
     bcf1_t* rec = bcf_init();
     int32_t svid = 0;
     int32_t sitecount = 0;
     int32_t lastRID = -1;
+    int32_t refIndex = -1;
     while (bcf_read(ifile, hdr, rec) == 0) {
       int32_t startsv = rec->pos + 1;
       bool parsed = true;
@@ -57,11 +54,11 @@ namespace sansa
       // Count records
       ++sitecount;
       
-      // Augment chromosome map
+      // New chromosome?
       if (rec->rid != lastRID) {
 	lastRID = rec->rid;
 	std::string chrName = bcf_hdr_id2name(hdr, rec->rid);
-	if (c.nchr.find(chrName) == c.nchr.end()) c.nchr.insert(std::make_pair(chrName, rec->rid));
+	refIndex = c.nchr[chrName];
       }
 
       // Unpack INFO
@@ -98,8 +95,9 @@ namespace sansa
 
       // Store SV
       if (parsed) {
-	if (chr2Map.find(chr2Name) == chr2Map.end()) chr2Map.insert(std::make_pair(chr2Name, chr2Map.size()));
-	svs.push_back(SV(rec->rid, startsv, chr2Map[chr2Name], endsv, svid, qualval, svtint, svlength));
+	SV dbsv = SV(refIndex, startsv, c.nchr[chr2Name], endsv, svid, qualval, svtint, svlength);
+	_makeCanonical(dbsv);
+	svs.push_back(dbsv);
 	std::string id("id");
 	std::string padNumber = boost::lexical_cast<std::string>(svid);
 	padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
@@ -110,17 +108,8 @@ namespace sansa
 	++svid;
       }
     }
-
-    // Remap chr names and ensure canonical order for translocations
-    typedef std::map<int32_t, int32_t> TChrIdMap;
-    TChrIdMap chrIdMap;
-    for(typename TChr2Map::iterator itc2 = chr2Map.begin(); itc2 != chr2Map.end(); ++itc2) chrIdMap.insert(std::make_pair(itc2->second, c.nchr[itc2->first]));
-    for(uint32_t i = 0; i < svs.size(); ++i) {
-      svs[i].chr2 = chrIdMap[svs[i].chr2];
-      _makeCanonical(svs[i]);
-    }
     bcf_destroy(rec);
-
+    
     // Sort SVs
     sort(svs.begin(), svs.end(), SortSVs<SV>());
     
