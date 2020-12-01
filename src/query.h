@@ -157,7 +157,7 @@ namespace sansa
 	int32_t bestID = -1;
 	float bestScore = -1;
 	bool noMatch = true;
-	for(; itSV != svs.end(); ++itSV) {	
+	for(; itSV != svs.end(); ++itSV) {
 	  int32_t startDiff = std::abs(itSV->svStart - qsv.svStart);
 	  if (startDiff > c.bpwindow) break;
 	  if (itSV->chr2 != qsv.chr2) continue;
@@ -165,10 +165,12 @@ namespace sansa
 	  int32_t endDiff = std::abs(itSV->svEnd - qsv.svEnd);
 	  if (endDiff > c.bpwindow) continue;
 	  if (itSV->id == -1) continue;
+	  //std::cerr << itSV->svStart << ',' << qsv.svStart << ';' << itSV->svEnd << ',' << qsv.svEnd << std::endl;
+
 	  float score = 0;
 	  if ((itSV->svlen > 0) && (qsv.svlen > 0)) {
-	    float rat = itSV->svlen / qsv.svlen;
-	    if (qsv.svlen < itSV->svlen) rat = qsv.svlen / itSV->svlen;
+	    double rat = (double) itSV->svlen / (double) qsv.svlen;
+	    if (qsv.svlen < itSV->svlen) rat = (double) qsv.svlen / (double) itSV->svlen;
 	    if (rat < c.sizediff) continue;
 	    score += rat;
 	  }
