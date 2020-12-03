@@ -35,6 +35,7 @@ namespace sansa
     bool matchSvType;
     bool bestMatch;
     bool reportNoMatch;
+    bool containedGenes;
     int32_t gtfFileFormat;   // 0 = gtf, 1 = bed, 2 = gff3
     int32_t bpwindow;
     int32_t maxDistance;
@@ -157,6 +158,7 @@ namespace sansa
       ("id,i", boost::program_options::value<std::string>(&c.idname)->default_value("gene_name"), "gtf/gff3 attribute")
       ("feature,f", boost::program_options::value<std::string>(&c.feature)->default_value("gene"), "gtf/gff3 feature")
       ("distance,t", boost::program_options::value<int32_t>(&c.maxDistance)->default_value(1000), "max. distance (0: overlapping features only)")
+      ("contained,c", "report contained genes (useful for CNVs but potentially long list of genes)")
       ;
     
     boost::program_options::options_description hidden("Hidden options");
@@ -195,6 +197,10 @@ namespace sansa
     // Report no matches
     if (vm.count("nomatch")) c.reportNoMatch = true;
     else c.reportNoMatch = false;
+
+    // Report contained genes
+    if (vm.count("contained")) c.containedGenes = true;
+    else c.containedGenes = false;
     
     // Check size ratio
     if (c.sizediff < 0) c.sizediff = 0;

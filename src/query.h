@@ -20,7 +20,7 @@ namespace sansa
 
   template<typename TConfig, typename TGenomicRegions, typename TGeneIds>
   inline void
-  geneAnnotation(TConfig const& c, TGenomicRegions const& gRegions, TGeneIds const& geneIds, int32_t const refIndex, int32_t const svStart, int32_t const refIndex2, int32_t const svEnd, std::string& featureBp1, std::string& featureBp2) {
+  geneAnnotation(TConfig const& c, TGenomicRegions const& gRegions, TGeneIds const& geneIds, int32_t const refIndex, int32_t const svStart, int32_t const refIndex2, int32_t const svEnd, std::string& featureBp1, std::string& featureBp2, std::string& featureContained) {
     typedef typename TGenomicRegions::value_type TChromosomeRegions;
 
     // Search nearby genes
@@ -63,9 +63,26 @@ namespace sansa
 	}
       }
     }
+
+
+    // Contained genes?
+    if (c.containedGenes) {
+      if (refIndex == refIndex2) {
+	bool firstFeature = true;
+	for(typename TChromosomeRegions::const_iterator itg = gRegions[refIndex].begin(); itg != gRegions[refIndex].end(); ++itg) {
+	  if (itg->start > svEnd) break;
+	  if (itg->end < svStart) continue;
+	  // Fully contained?
+	  if ((svStart <= itg->start) && (itg->end <= svEnd)) {
+	    int32_t offset = itg - gRegions[refIndex].begin();
+	    if (!firstFeature) featureContained += ",";
+	    else firstFeature = false;
+	    featureContained += geneIds[gRegions[refIndex][offset].lid] + '(' + gRegions[refIndex][offset].strand + ')' ;
+	  }
+	}
+      }
+    }
   }
-
-
 
 
   
@@ -88,7 +105,9 @@ namespace sansa
     boost::iostreams::filtering_ostream dataOut;
     dataOut.push(boost::iostreams::gzip_compressor());
     dataOut.push(boost::iostreams::file_sink(c.matchfile.string().c_str(), std::ios_base::out | std::ios_base::binary));
-    dataOut << "[1]ANNOID\tquery.chr\tquery.start\tquery.chr2\tquery.end\tquery.id\tquery.qual\tquery.svtype\tquery.ct\tquery.svlen\tquery.startfeature\tquery.endfeature" << std::endl;
+    dataOut << "[1]ANNOID\tquery.chr\tquery.start\tquery.chr2\tquery.end\tquery.id\tquery.qual\tquery.svtype\tquery.ct\tquery.svlen\tquery.startfeature\tquery.endfeature";
+    if (c.containedGenes) dataOut << "\tquery.containedfeature" << std::endl;
+    else dataOut << std::endl;
     
     // Parse VCF records
     bcf1_t* rec = bcf_init();
@@ -148,9 +167,11 @@ namespace sansa
 	// Annotate genes
 	std::string featureBp1 = "";
 	std::string featureBp2 = "";
-	if (c.gtfFileFormat != -1) geneAnnotation(c, gRegions, geneIds, qsv.chr, qsv.svStart, qsv.chr2, qsv.svEnd, featureBp1, featureBp2);
+	std::string featureContained = "";
+	if (c.gtfFileFormat != -1) geneAnnotation(c, gRegions, geneIds, qsv.chr, qsv.svStart, qsv.chr2, qsv.svEnd, featureBp1, featureBp2, featureContained);
 	if (featureBp1.empty()) featureBp1 = "NA";
 	if (featureBp2.empty()) featureBp2 = "NA";
+	if (featureContained.empty()) featureContained = "NA";
 
 	// Any breakpoint hit?
 	typename TSV::iterator itSV = std::lower_bound(svs.begin(), svs.end(), SV(qsv.chr, std::max(0, qsv.svStart - c.bpwindow), qsv.chr2, qsv.svEnd), SortSVs<SV>());
@@ -191,7 +212,9 @@ namespace sansa
 	    std::string padNumber = boost::lexical_cast<std::string>(itSV->id);
 	    padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
 	    id += padNumber;
-	    dataOut << id << '\t' << bcf_hdr_id2name(hdr, rec->rid) << '\t' << startsv << '\t' << chr2Name << '\t' <<  endsv << '\t' << rec->d.id << '\t' << qualval << '\t' << _translateSvType(qsv.svt) << '\t' << _translateCt(qsv.svt) << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2 << std::endl;
+	    dataOut << id << '\t' << bcf_hdr_id2name(hdr, rec->rid) << '\t' << startsv << '\t' << chr2Name << '\t' <<  endsv << '\t' << rec->d.id << '\t' << qualval << '\t' << _translateSvType(qsv.svt) << '\t' << _translateCt(qsv.svt) << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2;
+	    if (c.containedGenes) dataOut << '\t' << featureContained << std::endl;
+	    else dataOut << std::endl;
 	  }
 	}
 	if (((c.bestMatch) && (bestID != -1)) || ((c.reportNoMatch) && (noMatch))) {
@@ -203,7 +226,9 @@ namespace sansa
 	    padNumber.insert(padNumber.begin(), 9 - padNumber.length(), '0');
 	    id += padNumber;
 	  }
-	  dataOut << id << '\t' << bcf_hdr_id2name(hdr, rec->rid) << '\t' << startsv << '\t' << chr2Name << '\t' << endsv << '\t' << rec->d.id << '\t' << qualval << '\t' << _translateSvType(qsv.svt) << '\t' << _translateCt(qsv.svt) << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2 << std::endl;
+	  dataOut << id << '\t' << bcf_hdr_id2name(hdr, rec->rid) << '\t' << startsv << '\t' << chr2Name << '\t' << endsv << '\t' << rec->d.id << '\t' << qualval << '\t' << _translateSvType(qsv.svt) << '\t' << _translateCt(qsv.svt) << '\t' << svlength << '\t' << featureBp1 << '\t' << featureBp2;
+	  if (c.containedGenes) dataOut << '\t' << featureContained << std::endl;
+	  else dataOut << std::endl;
 	}
 
 	// Successful parse
