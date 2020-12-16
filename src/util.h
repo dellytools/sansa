@@ -285,6 +285,17 @@ namespace sansa
     if (!in) return false;
     in.close();
 
+    // Check file ending
+    if (f.string().size()>=6) {
+      int32_t strn = f.string().size();
+      if (f.string().substr(strn - 6, 6) == "gff.gz") return true;
+    }
+    if (f.string().size()>=7) {
+      int32_t strn = f.string().size();
+      if (f.string().substr(strn - 7, 7) == "gff3.gz") return true;
+    }
+
+    // Check file content
     std::ifstream file(f.string().c_str(), std::ios_base::in | std::ios_base::binary);
     boost::iostreams::filtering_streambuf<boost::iostreams::input> dataIn;
     dataIn.push(boost::iostreams::gzip_decompressor());
@@ -304,6 +315,13 @@ namespace sansa
     if (!in) return false;
     in.close();
 
+    // Check file ending
+    if (f.string().size()>=6) {
+      int32_t strn = f.string().size();
+      if (f.string().substr(strn - 6, 6) == "gtf.gz") return true;
+    }
+
+    // Check file content
     std::ifstream file(f.string().c_str(), std::ios_base::in | std::ios_base::binary);
     boost::iostreams::filtering_streambuf<boost::iostreams::input> dataIn;
     dataIn.push(boost::iostreams::gzip_decompressor());
