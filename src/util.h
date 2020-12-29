@@ -254,7 +254,7 @@ namespace sansa
     else {
       if ((svtval == "DEL") || (svtval == "DUP") || (svtval == "INV")) {
 	if ((endval != -1) && (endval > rec->pos)) {
-	  return endval - rec->pos;
+	  return endval - (rec->pos + 1);
 	}
       }
     }

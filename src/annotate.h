@@ -146,7 +146,7 @@ namespace sansa
     svopt.add_options()
       ("db,d", boost::program_options::value<boost::filesystem::path>(&c.db), "database VCF/BCF file")
       ("bpoffset,b", boost::program_options::value<int32_t>(&c.bpwindow)->default_value(50), "max. breakpoint offset")
-      ("ratio,r", boost::program_options::value<float>(&c.sizediff)->default_value(0.8), "min. size ratio smaller SV to larger SV")
+      ("ratio,r", boost::program_options::value<float>(&c.sizediff)->default_value(0.8), "min. reciprocal overlap")
       ("strategy,s", boost::program_options::value<std::string>(&strategy)->default_value("best"), "matching strategy [best|all]")
       ("notype,n", "do not require matching SV types")
       ("nomatch,m", "report SVs without match in database (ANNOID=None)")

@@ -186,14 +186,34 @@ namespace sansa
 	  int32_t endDiff = std::abs(itSV->svEnd - qsv.svEnd);
 	  if (endDiff > c.bpwindow) continue;
 	  if (itSV->id == -1) continue;
-	  //std::cerr << itSV->svStart << ',' << qsv.svStart << ';' << itSV->svEnd << ',' << qsv.svEnd << std::endl;
 
+	  //std::cerr << qsv.svStart << ',' << qsv.svEnd << ',' << qsv.svlen << ',' << qsv.svt << '\t' << itSV->svStart << ',' << itSV->svEnd << ',' << itSV->svlen << ',' << itSV->svt << std::endl;
+	  
+	  // Any overlap?
 	  float score = 0;
 	  if ((itSV->svlen > 0) && (qsv.svlen > 0)) {
 	    double rat = (double) itSV->svlen / (double) qsv.svlen;
 	    if (qsv.svlen < itSV->svlen) rat = (double) qsv.svlen / (double) itSV->svlen;
 	    if (rat < c.sizediff) continue;
 	    score += rat;
+
+	    // For intra-chromosomal SVs (no insertions, translocations, ...), check in addition reciprocal overlap
+	    if ( ((qsv.svt < 4) || (qsv.svt > 8)) && ((itSV->svt < 4) || (itSV->svt > 8)) && (qsv.svEnd - qsv.svStart == qsv.svlen) && (itSV->svEnd - itSV->svStart == itSV->svlen)) {
+	      if (itSV->svEnd < qsv.svStart) continue;
+	      if (qsv.svEnd < itSV->svStart) continue;
+	      std::vector<int32_t> posarr;
+	      posarr.push_back(itSV->svStart);
+	      posarr.push_back(itSV->svEnd);
+	      posarr.push_back(qsv.svStart);
+	      posarr.push_back(qsv.svEnd);
+	      std::sort(posarr.begin(), posarr.end());
+	      int32_t intersectionsize = posarr[2] - posarr[1];
+	      if (intersectionsize <= 0) continue;
+	      double recov = (double) intersectionsize / (double) qsv.svlen;
+	      if (recov < c.sizediff) continue;
+	      recov = (double) intersectionsize / (double) itSV->svlen;
+	      if (recov < c.sizediff) continue;
+	    }	      
 	  }
 	
 	  // Found match
