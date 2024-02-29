@@ -1,5 +1,5 @@
 # use the ubuntu base image
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 
 MAINTAINER Tobias Rausch rausch@embl.de
 
@@ -19,9 +19,11 @@ RUN apt-get update && apt-get install -y \
     libboost-filesystem-dev \
     libboost-iostreams-dev \
     libbz2-dev \
+    libdeflate-dev \
     libhdf5-dev \
     libncurses-dev \
     liblzma-dev \
+    pkg-config \
     zlib1g-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -39,15 +41,16 @@ RUN cd /opt \
 
 # Multi-stage build
 FROM alpine:latest
+RUN apk add --no-cache bash
 RUN mkdir -p /opt/sansa/bin
 WORKDIR /opt/sansa/bin
 COPY --from=0 /opt/sansa/bin/sansa .
 
 # Workdir
-WORKDIR /root/
+WORKDIR /home
 
 # Add sansa to PATH
 ENV PATH="/opt/sansa/bin:${PATH}"
 
-# by default /bin/sh is executed
-CMD ["/bin/sh"]
+# by default /bin/bash is executed
+CMD ["/bin/bash"]
