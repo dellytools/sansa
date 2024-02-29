@@ -80,6 +80,46 @@ namespace sansa
     }
   };
 
+  inline bool
+  _translocation(int32_t const svt) {
+    return (DELLY_SVT_TRANS <= svt) && (svt < 9);
+  }
+  
+  inline bool
+  _translocation(bam1_t* rec) {
+    return (rec->core.tid != rec->core.mtid);
+  }
+
+  inline uint8_t
+  _getSpanOrientation(int32_t const svt) {
+    if (_translocation(svt)) {
+      return svt - DELLY_SVT_TRANS;
+    } else {
+      return svt;
+    }
+  }
+  
+  inline std::string
+  _addID(int32_t const svt) {
+    if (svt == 0) return "INV";
+    else if (svt == 1) return "INV";
+    else if (svt == 2) return "DEL";
+    else if (svt == 3) return "DUP";
+    else if (svt == 4) return "INS";
+    else if (svt == 9) return "CNV";
+    else return "BND";
+  }
+
+  // Add Orientation
+  inline std::string
+  _addOrientation(int32_t const svt) {
+    uint8_t ct = _getSpanOrientation(svt);
+    if (ct==0) return "3to3";
+    else if (ct==1) return "5to5";
+    else if (ct==2) return "3to5";
+    else if (ct==3) return "5to3";
+    else return "NtoN";
+  }
 
   inline void
   _remove_info_tag(bcf_hdr_t* hdr, bcf1_t* rec, std::string const& tag) {
@@ -261,7 +301,44 @@ namespace sansa
     return svlenval;
   }
 
+  inline double
+  _sharedCarriers(std::vector<int32_t> const& gt1, std::vector<int32_t> const& gt2) {
+    // Percentage of shared carriers
+    uint32_t carnum = 0;
+    uint32_t carshared = 0;
+    for(uint32_t k = 0; k < gt1.size(); ++k) {
+      if ((gt1[k] != 0) || (gt2[k] != 0)) {
+	++carnum;
+	if ((gt1[k] != 0) && (gt2[k] != 0)) ++carshared;
+      }
+    }
+    return (double) (carshared) / (double) (carnum);
+  }
 
+  inline double
+  nonrefGtConc(std::vector<int32_t> const& gt1, std::vector<int32_t> const& gt2) {
+    uint32_t totgt = 0;
+    uint32_t matchgt = 0;
+    for(uint32_t k = 0; k < gt1.size(); ++k) {
+      if ((gt1[k] != 0) || (gt2[k] != 0)) {
+	++totgt;
+	if (gt1[k] == gt2[k]) ++matchgt;
+      }
+    }
+    return (double) (matchgt) / (double) (totgt);
+  }
+  
+  inline double
+  gtConc(std::vector<int32_t> const& gt1, std::vector<int32_t> const& gt2) {
+    uint32_t totgt = 0;
+    uint32_t matchgt = 0;
+    for(uint32_t k = 0; k < gt1.size(); ++k) {
+      ++totgt;
+      if (gt1[k] == gt2[k]) ++matchgt;
+    }
+    return (double) (matchgt) / (double) (totgt);
+  }
+  
   inline void
   _makeCanonical(SV& sv) {
     if (sv.chr != sv.chr2) {
