@@ -547,7 +547,7 @@ namespace sansa
     // Check command line arguments
     if ((vm.count("help")) || (!vm.count("input-file")) || (!vm.count("base"))) {
       std::cerr << std::endl;
-      std::cerr << "Usage: delly " << argv[0] << " [OPTIONS] -a <base.bcf> <input.bcf>" << std::endl;
+      std::cerr << "Usage: sansa " << argv[0] << " [OPTIONS] -a <base.bcf> <input.bcf>" << std::endl;
       std::cerr << visible_options << "\n";
       return 0;
     }
@@ -638,7 +638,7 @@ namespace sansa
     // Show cmd
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
     std::cerr << '[' << boost::posix_time::to_simple_string(now) << "] ";
-    std::cerr << "delly ";
+    std::cerr << "sansa ";
     for(int i=0; i<argc; ++i) { std::cerr << argv[i] << ' '; }
     std::cerr << std::endl;
 

@@ -31,6 +31,8 @@ Sansa has several subcommands
 
 `sansa markdup` to [mark duplicate SV sites](https://github.com/dellytools/sansa#mark-duplicates) in a multi-sample VCF file
 
+`sansa compvcf` to [compare multi-sample VCF files](https://github.com/dellytools/sansa#compare-vcfs)
+
 ## SV annotation
 
 Download an annotation database. Examples are [gnomAD-SV](https://gnomad.broadinstitute.org/) or [1000 Genomes phase 3](https://www.internationalgenome.org/phase-3-structural-variant-dataset) and then run the annotation.
@@ -118,10 +120,19 @@ Using [delly](https://github.com/dellytools/delly) and the `INFO/CT` values one 
 
 ## Mark duplicates
 
-For larger studies that employ single sample calling and then merge SVs across samples a common problem is to identify duplicate SV sites that occur due to SV breakpoint imprecisions. `sansa markdup` identifies duplicates sites based on genomic proximity, genotype concordance and SV allele similarity. By default, duplicate SVs need to have SV breakpoints within 50bp (`-b 50`), a reciprocal overlap of 80% (`-s 0.8`), an SV allele divergence (`-s 0.1`) and an minimum fraction of shared SV carriers of 25% (`-c 0.25`). The SV allele comparison requires [delly's](https://github.com/dellytools/delly) `INFO/CONSENSUS` field as the SV haplotype. 
+For larger studies that employ single sample calling and then merge SVs across samples a common problem is to identify duplicate SV sites that occur due to SV breakpoint imprecisions. `sansa markdup` identifies duplicates sites based on genomic proximity, genotype concordance and SV allele similarity. By default, duplicate SVs need to have SV breakpoints within 50bp (`-b 50`), a reciprocal overlap of 80% (`-s 0.8`), a maximum SV allele divergence of 10% (`-s 0.1`) and a minimum fraction of shared SV carriers of 25% (`-c 0.25`). The SV allele comparison requires [delly's](https://github.com/dellytools/delly) `INFO/CONSENSUS` field as the SV haplotype. 
 
 `sansa markdup -o rmdup.bcf pop.delly.bcf`
 
+## Compare VCFs
+
+Compare an input VCF/BCF file to a ground truth (base) VCF/BCF file.
+
+`sansa compvcf -a base.bcf input.bcf`
+
+To compare SV site lists that lack genotypes, you need to set the minimum allele count to zero (`-e 0`).
+
+`sansa compvcf -a base.bcf -e 0 input.bcf`
 
 ## Citation
 
