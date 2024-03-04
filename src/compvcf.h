@@ -265,6 +265,10 @@ namespace sansa
       // Insertion length
       if (_isKeyPresent(hdr, "INSLEN")) {
 	if (bcf_get_info_int32(hdr, rec, "INSLEN", &inslen, &ninslen) > 0) inslenVal = *inslen;
+      } else if (svtVal  == "INS") {
+	if (_isKeyPresent(hdr, "SVLEN")) {
+	  if (bcf_get_info_int32(hdr, rec, "SVLEN", &inslen, &ninslen) > 0) inslenVal = *inslen;
+	}
       }
 
       // BNDs
