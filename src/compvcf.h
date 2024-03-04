@@ -213,16 +213,17 @@ namespace sansa
       svEndVal = -1;
       inslenVal = -1;
       if (_isKeyPresent(hdr, "SVTYPE")) {
-	bcf_get_info_string(hdr, rec, "SVTYPE", &svt, &nsvt);
-	svtVal = std::string(svt);
-	if (_isKeyPresent(hdr, "CT")) {
-	  bcf_get_info_string(hdr, rec, "CT", &ct, &nct);
-	  ctVal = std::string(ct);
-	} else {
-	  if (svtVal == "INS") ctVal = "NtoN";
-	  else if (svtVal == "DEL") ctVal = "3to5";
-	  else if (svtVal == "DUP") ctVal = "5to3";
-	  else if (svtVal == "INV") ctVal = "3to3"; // or 5to5
+	if (bcf_get_info_string(hdr, rec, "SVTYPE", &svt, &nsvt) > 0) {
+	  svtVal = std::string(svt);
+	  if (_isKeyPresent(hdr, "CT")) {
+	    bcf_get_info_string(hdr, rec, "CT", &ct, &nct);
+	    ctVal = std::string(ct);
+	  } else {
+	    if (svtVal == "INS") ctVal = "NtoN";
+	    else if (svtVal == "DEL") ctVal = "3to5";
+	    else if (svtVal == "DUP") ctVal = "5to3";
+	    else if (svtVal == "INV") ctVal = "3to3"; // or 5to5
+	  }
 	}
       }
 
@@ -312,8 +313,11 @@ namespace sansa
 	    std::cerr << "Error: SV end position is unknown for " << svtVal << "!" << std::endl;
 	  }
 	} else {
-	  success=false;
-	  std::cerr << "Error: Missing SV end position!" << std::endl;
+	  if (svtVal == "INS") svEndVal = rec->pos + 1;
+	  else {
+	    success=false;
+	    std::cerr << "Error: Missing SV end position!" << std::endl;
+	  }
 	}
       }
 
