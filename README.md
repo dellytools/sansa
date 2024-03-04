@@ -23,6 +23,14 @@ You can also build sansa from source using a recursive clone and make.
 
 `make all`
 
+## Usage
+
+Sansa has several subcommands
+
+`sansa annotate` for [SV annotation](https://github.com/dellytools/sansa#sv-annotation)
+
+`sansa markdup` to [mark duplicate SV sites](https://github.com/dellytools/sansa#mark-duplicates) in a multi-sample VCF file
+
 ## SV annotation
 
 Download an annotation database. Examples are [gnomAD-SV](https://gnomad.broadinstitute.org/) or [1000 Genomes phase 3](https://www.internationalgenome.org/phase-3-structural-variant-dataset) and then run the annotation.
@@ -107,6 +115,13 @@ Using [delly](https://github.com/dellytools/delly) and the `INFO/CT` values one 
 | chrA | posA      | chrB | posB      | BND    | 5to5 | geneA(0;+)    | geneB(0;-)    |
 | chrA | posA      | chrB | posB      | BND    | 5to5 | geneC(0;-)    | geneD(0;+)    |
 | 3    | 169190498 | 2    | 47689038  | BND    | 5to5 | MECOM(0;-)    | MSH2(0;+)     |
+
+## Mark duplicates
+
+For larger studies that employ single sample calling and then merge SVs across samples a common problem is to identify duplicate SV sites that occur due to SV breakpoint imprecisions. `sansa markdup` identifies duplicates sites based on genomic proximity, genotype concordance and SV allele similarity. By default, duplicate SVs need to have SV breakpoints within 50bp (`-b 50`), a reciprocal overlap of 80% (`-s 0.8`), an SV allele divergence (`-s 0.1`) and an minimum fraction of shared SV carriers of 25% (`-c 0.25`). The SV allele comparison requires [delly's](https://github.com/dellytools/delly) `INFO/CONSENSUS` field as the SV haplotype. 
+
+`sansa markdup -o rmdup.bcf pop.delly.bcf`
+
 
 ## Citation
 
