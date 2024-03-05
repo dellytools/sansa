@@ -91,7 +91,7 @@ namespace sansa
   query(TConfig& c, TSV& svs, TGenomicRegions& gRegions, TGeneIds& geneIds) {
 
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Query input SVs" << std::endl;
+    std::cerr << '[' << boost::posix_time::to_simple_string(now) << "] Query input SVs" << std::endl;
 
     // Load bcf file
     htsFile* ifile = bcf_open(c.infile.string().c_str(), "r");
@@ -259,7 +259,7 @@ namespace sansa
 
     // Statistics
     now = boost::posix_time::second_clock::local_time();
-    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Parsed " << parsedSV << " out of " << sitecount << " VCF/BCF records." << std::endl;
+    std::cerr << '[' << boost::posix_time::to_simple_string(now) << "] Parsed " << parsedSV << " out of " << sitecount << " VCF/BCF records." << std::endl;
 	
     // Close file handles
     dataOut.pop();

@@ -18,7 +18,6 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/icl/split_interval_map.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
 
 #include "parsedb.h"
 #include "query.h"
@@ -122,7 +121,7 @@ namespace sansa
     
     // End
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] Done." << std::endl;
+    std::cerr << '[' << boost::posix_time::to_simple_string(now) << "] Done." << std::endl;
     return 0;
   }
 
@@ -179,8 +178,9 @@ namespace sansa
     
     // Check command line arguments
     if ((vm.count("help")) || (!vm.count("input-file"))) {
-      std::cout << "Usage: sansa " << argv[0] << " [OPTIONS] input.bcf" << std::endl;
-      std::cout << visible_options << "\n";
+      std::cerr << std::endl;
+      std::cerr << "Usage: sansa " << argv[0] << " [OPTIONS] input.bcf" << std::endl;
+      std::cerr << visible_options << "\n";
       return -1;
     }
 
@@ -223,10 +223,10 @@ namespace sansa
 
     // Show cmd
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] ";
-    std::cout << "sansa ";
-    for(int i=0; i<argc; ++i) { std::cout << argv[i] << ' '; }
-    std::cout << std::endl;
+    std::cerr << '[' << boost::posix_time::to_simple_string(now) << "] ";
+    std::cerr << "sansa ";
+    for(int i=0; i<argc; ++i) { std::cerr << argv[i] << ' '; }
+    std::cerr << std::endl;
     
     return runAnnotate(c);
   }

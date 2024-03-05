@@ -107,7 +107,7 @@ namespace sansa
   inline int32_t
   parseGFF3All(TConfig const& c, TGenomicRegions& overlappingRegions, TGeneIds& geneIds, TProteinCoding& pCoding) {
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "GFF3 feature parsing" << std::endl;
+    std::cerr << '[' << boost::posix_time::to_simple_string(now) << "] " << "GFF3 feature parsing" << std::endl;
     
     // Check gzip
     if (!is_gz(c.gtfFile)) {
