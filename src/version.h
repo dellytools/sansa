@@ -36,7 +36,7 @@ namespace sansa
     
   inline void
   bsd() {
-    std::cerr << "Copyright (c) 2019 Sansa Project Authors (see AUTHORS file for details)." << std::endl;
+    std::cerr << "Copyright (c) 2019 European Molecular Biology Laboratory (EMBL)." << std::endl;
     std::cerr << "All rights reserved." << std::endl;
     std::cerr << std::endl;
     std::cerr << "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:" << std::endl;
