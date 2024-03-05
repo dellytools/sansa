@@ -261,6 +261,16 @@ namespace sansa
       if (_isKeyPresent(hdr, "END")) {
 	if (bcf_get_info_int32(hdr, rec, "END", &svend, &nsvend) > 0) svEndVal = *svend;
       }
+      if (svEndVal == -1) {
+	if (svtVal == "DEL") {
+	  if (_isKeyPresent(hdr, "SVLEN")) {
+	    if (bcf_get_info_int32(hdr, rec, "SVLEN", &svend, &nsvend) > 0) {
+	      if (*svend < 0) svEndVal = rec->pos - (*svend);
+	      else svEndVal = rec->pos + (*svend);
+	    }
+	  }
+	}
+      }
 
       // Insertion length
       if (_isKeyPresent(hdr, "INSLEN")) {
@@ -320,7 +330,7 @@ namespace sansa
 	  if (svtVal == "INS") svEndVal = rec->pos + 1;
 	  else {
 	    success=false;
-	    std::cerr << "Error: Missing SV end position!" << std::endl;
+	    std::cerr << "Error: Missing SV end position! " << std::string(rec->d.id) << std::endl;
 	  }
 	}
       }
@@ -415,6 +425,9 @@ namespace sansa
 	    allsv.push_back(sv);
 	  }
 	}
+      } else {
+	//std::cerr << std::string(rec->d.id) << " failed some filters! (" << filename << ")" << std::endl;
+	//std::cerr << qualVal << '\t' << pass << '\t' << svLenVal << std::endl;
       }
     }
     bcf_destroy(rec);
