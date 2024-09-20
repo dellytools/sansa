@@ -111,7 +111,7 @@ namespace sansa
     bcf_destroy(rec);
     
     // Sort SVs
-    sort(svs.begin(), svs.end(), SortSVs<SV>());
+    sort(svs.begin(), svs.end());
     
     // Statistics
     now = boost::posix_time::second_clock::local_time();

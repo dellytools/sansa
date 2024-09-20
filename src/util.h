@@ -29,23 +29,19 @@ namespace sansa
 
     explicit IntervalLabel(int32_t s) : start(s), end(s+1), strand('*'), lid(-1) {}
     IntervalLabel(int32_t s, int32_t e, char t, int32_t l) : start(s), end(e), strand(t), lid(l) {}
+
+    bool operator<(const IntervalLabel& s2) const {
+      return start < s2.start;
+    }
   };
 
   
   template<typename TRecord>
-  struct SortIntervalLabel : public std::binary_function<TRecord, TRecord, bool> {
+  struct SortIntervalLabel {
     inline bool operator()(TRecord const& s1, TRecord const& s2) const {
       return s1.lid < s2.lid;
     }
   };
-
-  template<typename TRecord>
-  struct SortIntervalStart : public std::binary_function<TRecord, TRecord, bool> {
-    inline bool operator()(TRecord const& s1, TRecord const& s2) const {
-      return s1.start < s2.start;
-    }
-  };
-
 
   inline void
   _insertInterval(std::vector<IntervalLabel>& cr, int32_t s, int32_t e, char strand, int32_t lid, int32_t) {
@@ -69,17 +65,13 @@ namespace sansa
     SV(int32_t const c1, int32_t const pos1, int32_t const c2, int32_t pos2) : chr(c1), svStart(pos1), chr2(c2), svEnd(pos2), id(-1), qual(0), svt(-1), svlen(-1) {}
 
     SV(int32_t const c1, int32_t const pos1, int32_t const c2, int32_t pos2, int32_t const ival, int32_t const qval, int32_t const svtval, int32_t const svl) : chr(c1), svStart(pos1), chr2(c2), svEnd(pos2), id(ival), qual(qval), svt(svtval), svlen(svl) {}
-  };
 
-  
-  template<typename TSV>
-  struct SortSVs : public std::binary_function<TSV, TSV, bool>
-  {
-    inline bool operator()(TSV const& sv1, TSV const& sv2) {
-      return ((sv1.chr<sv2.chr) || ((sv1.chr==sv2.chr) && (sv1.svStart<sv2.svStart)) || ((sv1.chr==sv2.chr) && (sv1.svStart==sv2.svStart) && (sv1.chr2<sv2.chr2)) || ((sv1.chr==sv2.chr) && (sv1.svStart==sv2.svStart) && (sv1.chr2==sv2.chr2) && (sv1.svEnd<sv2.svEnd)) || ((sv1.chr==sv2.chr) && (sv1.svStart==sv2.svStart) && (sv1.chr2==sv2.chr2) && (sv1.svEnd==sv2.svEnd) && (sv1.id < sv2.id)));
+    bool operator<(const SV& sv2) const {
+      return ((chr<sv2.chr) || ((chr==sv2.chr) && (svStart<sv2.svStart)) || ((chr==sv2.chr) && (svStart==sv2.svStart) && (chr2<sv2.chr2)) || ((chr==sv2.chr) && (svStart==sv2.svStart) && (chr2==sv2.chr2) && (svEnd<sv2.svEnd)) || ((chr==sv2.chr) && (svStart==sv2.svStart) && (chr2==sv2.chr2) && (svEnd==sv2.svEnd) && (id < sv2.id)));
     }
   };
 
+  
   inline bool
   _translocation(int32_t const svt) {
     return (DELLY_SVT_TRANS <= svt) && (svt < 9);

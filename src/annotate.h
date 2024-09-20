@@ -110,10 +110,7 @@ namespace sansa
 	std::cerr << "Error parsing GTF/GFF3/BED file!" << std::endl;
 	return 1;
       }
-      for(int32_t refIndex = 0; refIndex < maxRID; ++refIndex) {
-	// Sort by position
-	std::sort(gRegions[refIndex].begin(), gRegions[refIndex].end(), SortIntervalStart<IntervalLabel>());
-      }
+      for(int32_t refIndex = 0; refIndex < maxRID; ++refIndex) std::sort(gRegions[refIndex].begin(), gRegions[refIndex].end());
     }
 
     // Query SV

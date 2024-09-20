@@ -174,7 +174,7 @@ namespace sansa
 	if (featureContained.empty()) featureContained = "NA";
 
 	// Any breakpoint hit?
-	typename TSV::iterator itSV = std::lower_bound(svs.begin(), svs.end(), SV(qsv.chr, std::max(0, qsv.svStart - c.bpwindow), qsv.chr2, qsv.svEnd), SortSVs<SV>());
+	typename TSV::iterator itSV = std::lower_bound(svs.begin(), svs.end(), SV(qsv.chr, std::max(0, qsv.svStart - c.bpwindow), qsv.chr2, qsv.svEnd));
 	int32_t bestID = -1;
 	float bestScore = -1;
 	bool noMatch = true;

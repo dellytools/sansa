@@ -55,16 +55,12 @@ namespace sansa
     std::vector<float> vaf;
     std::vector<float> gq;
     std::vector<int32_t> gt;
-  };
 
-  template<typename TSV>
-  struct SortSVEvents : public std::binary_function<TSV, TSV, bool>
-  {
-    inline bool operator()(TSV const& sv1, TSV const& sv2) {
-      return ((sv1.tid<sv2.tid) || ((sv1.tid==sv2.tid) && (sv1.svStart<sv2.svStart)) || ((sv1.tid==sv2.tid) && (sv1.svStart==sv2.svStart) && (sv1.svEnd<sv2.svEnd)));
+    bool operator<(const SVEvent& sv2) const {
+      return ((tid<sv2.tid) || ((tid==sv2.tid) && (svStart<sv2.svStart)) || ((tid==sv2.tid) && (svStart==sv2.svStart) && (svEnd<sv2.svEnd)));
     }
   };
-  
+
   
   struct MarkdupConfig {
     bool filterForPass;
@@ -429,7 +425,7 @@ namespace sansa
     if (!_loadSVEvents(c, allsv)) return -1;
 
     // Sort SVs
-    sort(allsv.begin(), allsv.end(), SortSVEvents<SVEvent>());
+    sort(allsv.begin(), allsv.end());
 
     // Mark duplicates
     _markDuplicates(c, allsv);

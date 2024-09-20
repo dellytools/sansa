@@ -62,17 +62,12 @@ namespace sansa
 
     CompSVRecord() : match(0), tid(0), svStart(0), svEnd(0), svLen(0), svt(0), qual(0), consBp(0), score(0), bestMatchId(0), gtConc(0), nonrefGtConc(0), id(""), allele("") {}
     CompSVRecord(int32_t const t, int32_t const svS) : match(0), tid(t), svStart(svS), svEnd(0), svLen(0), svt(0), qual(0), consBp(0), score(0), bestMatchId(0), gtConc(0), nonrefGtConc(0), id(""), allele("") {}
-  };
 
-  template<typename TSV>
-  struct SortCompSVRecord : public std::binary_function<TSV, TSV, bool>
-  {
-    inline bool operator()(TSV const& sv1, TSV const& sv2) {
-      return ((sv1.tid<sv2.tid) || ((sv1.tid==sv2.tid) && (sv1.svStart<sv2.svStart)) || ((sv1.tid==sv2.tid) && (sv1.svStart==sv2.svStart) && (sv1.svEnd<sv2.svEnd)));
+    bool operator<(const CompSVRecord& sv2) const {
+      return ((tid<sv2.tid) || ((tid==sv2.tid) && (svStart<sv2.svStart)) || ((tid==sv2.tid) && (svStart==sv2.svStart) && (svEnd<sv2.svEnd)));
     }
   };
-  
-  
+
   struct CompvcfConfig {
     typedef std::map<std::string, uint32_t> TChrMap;
     bool filterForPass;
@@ -100,7 +95,7 @@ namespace sansa
     std::cerr << '[' << boost::posix_time::to_simple_string(boost::posix_time::second_clock::local_time()) << "] " << "Comparing " << compsv.size() << " SVs with " << basesv.size() << " SVs in the base VCF/BCF file " << std::endl;
     for(uint32_t i = 0; i < basesv.size(); ++i) {
       int32_t earliestStart = std::max(basesv[i].svStart - (c.bpdiff + 1), 0);
-      typename TCompSVType::const_iterator itsv = std::lower_bound(compsv.begin(), compsv.end(), CompSVRecord(basesv[i].tid, earliestStart), SortCompSVRecord<CompSVRecord>());
+      typename TCompSVType::const_iterator itsv = std::lower_bound(compsv.begin(), compsv.end(), CompSVRecord(basesv[i].tid, earliestStart));
       for(uint32_t j = (itsv - compsv.begin()); j < compsv.size(); ++j) {
 	if (basesv[i].tid < compsv[j].tid) break;  // Sorted by tid
 	if (c.checkCT) {
@@ -461,8 +456,8 @@ namespace sansa
     if (!_loadCompSVs(c, c.vcffile.string(), compsv)) return -1;
 
     // Sort SVs
-    sort(basesv.begin(), basesv.end(), SortCompSVRecord<CompSVRecord>());
-    sort(compsv.begin(), compsv.end(), SortCompSVRecord<CompSVRecord>());
+    sort(basesv.begin(), basesv.end());
+    sort(compsv.begin(), compsv.end());
 
     // Recall, precission, GT concordance
     compareSVs(c, basesv, compsv);
