@@ -415,7 +415,7 @@ namespace sansa
 	    success=false;
 	    std::cerr << "Error: Duplicate IDs " << sv.id << std::endl;
 	  } else {
-	    //std::cerr << sv.tid << ',' << sv.svStart << ',' << sv.svEnd << ',' << sv.id << ',' << sv.svLen << ',' << sv.svt << std::endl;
+	    //std::cerr << filename << ',' << sv.tid << ',' << sv.svStart << ',' << sv.mtid << ',' << sv.svEnd << ',' << sv.id << ',' << sv.svLen << ',' << sv.svt << std::endl;
 	    allIds.insert(sv.id);
 	    allsv.push_back(sv);
 	  }
