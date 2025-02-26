@@ -73,6 +73,7 @@ namespace sansa
     bool filterForPass;
     bool checkID;
     bool checkCT;
+    bool checkSVT;
     int32_t qualthres;
     int32_t bpdiff;
     int32_t minsize;
@@ -98,10 +99,12 @@ namespace sansa
       typename TCompSVType::const_iterator itsv = std::lower_bound(compsv.begin(), compsv.end(), CompSVRecord(basesv[i].tid, earliestStart));
       for(uint32_t j = (itsv - compsv.begin()); j < compsv.size(); ++j) {
 	if (basesv[i].tid < compsv[j].tid) break;  // Sorted by tid
-	if (c.checkCT) {
-	  if (basesv[i].svt != compsv[j].svt) continue;
-	} else {
-	  if (_addID(basesv[i].svt) != _addID(compsv[j].svt)) continue;  // Compare SV types (BND, INV,...) but not CT
+	if (c.checkSVT) {
+	  if (c.checkCT) {
+	    if (basesv[i].svt != compsv[j].svt) continue;
+	  } else {
+	    if (_addID(basesv[i].svt) != _addID(compsv[j].svt)) continue;  // Compare SV types (BND, INV,...) but not CT
+	  }
 	}
 	if (basesv[i].mtid != compsv[j].mtid) continue;
 	if (std::abs(basesv[i].svStart - compsv[j].svStart) > c.bpdiff) {
@@ -277,6 +280,7 @@ namespace sansa
       }
 
       // BNDs
+      int32_t svStartVal = rec->pos;
       if (svtVal == "BND") {
 	int32_t pos2val = -1;
 	if ((_isKeyPresent(hdr, "CHR2")) && (_isKeyPresent(hdr, "POS2"))) {
@@ -306,6 +310,14 @@ namespace sansa
 	if ((!chr2Name.empty()) && (pos2val != -1)) {
 	  svEndVal = pos2val;
 	  svLenVal = 0;
+	  // Some SV callers use BND for intra-chromosomal, make sure POS < END
+	  if (chr2Name == std::string(bcf_hdr_id2name(hdr, rec->rid))) {
+	    if (svStartVal > svEndVal) {
+	      int32_t tmpVal = svStartVal;
+	      svStartVal = svEndVal;
+	      svEndVal = tmpVal;
+	    }
+	  }
 	} else {
 	  success=false;
 	  std::cerr << "Error: Could not parse BND ALT allele " << rec->d.allele[1] << std::endl;
@@ -365,7 +377,7 @@ namespace sansa
 	  if (c.chrmap.find(chr2Name) == c.chrmap.end()) c.chrmap.insert(std::make_pair(chr2Name, c.chrmap.size()));
 	  sv.mtid = c.chrmap[chr2Name];
 	}
-	sv.svStart = rec->pos;
+	sv.svStart = svStartVal;
 	sv.svEnd = svEndVal;
 	// Use some canonical ordering, swap if necessary
 	if ((svtVal == "BND") && (sv.tid > sv.mtid)) {
@@ -537,6 +549,7 @@ namespace sansa
       ("sizeratio,s", boost::program_options::value<float>(&c.sizeratio)->default_value(0.5), "min. SV size ratio")
       ("divergence,d", boost::program_options::value<float>(&c.divergence)->default_value(0.3), "max. SV allele divergence")
       ("outprefix,o", boost::program_options::value<std::string>(&c.outprefix)->default_value("out"), "output prefix")
+      ("nosvt,t", "Ignore the SV type")
       ("pass,p", "Filter sites for PASS")
       ("ignore,i", "Ignore duplicate IDs")
       ("ct,c", "Require matching CT value in addition to SV type")
@@ -579,6 +592,10 @@ namespace sansa
     // Check CT
     if (vm.count("ct")) c.checkCT = true;
     else c.checkCT = false;
+
+    // Ignore SV type
+    if (vm.count("nosvt")) c.checkSVT = false;
+    else c.checkSVT = true;
 
     // Check base VCF file
     std::set<std::string> baseSamples;
