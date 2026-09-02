@@ -198,6 +198,19 @@ namespace sansa
     return true;
   }
 
+  inline int32_t
+  deriveInsLength(bcf_hdr_t* hdr, bcf1_t* rec) {
+    int32_t val = 0;
+    if (_parse_bcf_int32(hdr, rec, "INSLEN", val)) return val;
+    if (_parse_bcf_int32(hdr, rec, "AVGLEN", val)) return val;
+    if (_isKeyPresent(hdr, "AVGLEN")) {
+      float* avglen = NULL;
+      int32_t navglen = 0;
+      if (bcf_get_info_float(hdr, rec, "AVGLEN", &avglen, &navglen) > 0) val = (int32_t) (*avglen);
+      if (avglen != NULL) free(avglen);
+    }
+    return val;
+  }
 
   inline int32_t
   deriveEndPos(bcf1_t* rec, std::string const& svtval, int32_t const pos2val, int32_t const endval) {

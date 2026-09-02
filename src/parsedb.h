@@ -92,6 +92,7 @@ namespace sansa
       _parse_bcf_int32(hdr, rec, "END", endval);
       int32_t svlenval = 0;
       _parse_bcf_int32(hdr, rec, "SVLEN", svlenval);
+      if ((svtval == "INS") && (svlenval == 0)) svlenval = deriveInsLength(hdr, rec);
 
       // Derive proper END and SVLEN
       int32_t endsv = deriveEndPos(rec, svtval, pos2val, endval);
