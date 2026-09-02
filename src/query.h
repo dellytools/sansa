@@ -179,6 +179,7 @@ namespace sansa
 	float bestScore = -1;
 	bool noMatch = true;
 	for(; itSV != svs.end(); ++itSV) {
+	  if (itSV->chr != qsv.chr) break;
 	  int32_t startDiff = std::abs(itSV->svStart - qsv.svStart);
 	  if (startDiff > c.bpwindow) break;
 	  if (itSV->chr2 != qsv.chr2) continue;

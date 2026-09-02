@@ -70,11 +70,9 @@ namespace sansa
       std::string val = *tokIter++;
       char strand = '*';
       std::string biotype = "NA";
-      if (tokIter != tokens.end()) {
-	++tokIter; // skip score
-	strand = boost::lexical_cast<char>(*tokIter++);
-	biotype = *tokIter++;
-      }
+      if (tokIter != tokens.end()) ++tokIter; // skip score
+      if (tokIter != tokens.end()) strand = boost::lexical_cast<char>(*tokIter++);
+      if (tokIter != tokens.end()) biotype = *tokIter++;
       int32_t idval = geneIds.size();
       typename TIdMap::const_iterator idIter = idMap.find(val);
       if (idIter == idMap.end()) {

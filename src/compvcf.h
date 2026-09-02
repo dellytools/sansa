@@ -365,7 +365,8 @@ namespace sansa
       }
 
       // Filter sites
-      if ((qualVal >= c.qualthres) && (pass) && (svLenVal >= c.minsize) && (svLenVal < c.maxsize)) {
+      bool sizeOk = (svtVal == "BND") || ((svLenVal >= c.minsize) && (svLenVal < c.maxsize));
+      if ((qualVal >= c.qualthres) && (pass) && (sizeOk)) {
 	// Define SV event
 	CompSVRecord sv;
 	sv.match = 0;

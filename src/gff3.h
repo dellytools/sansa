@@ -35,9 +35,12 @@ namespace sansa
       Tokenizer tokens(gline, sep);
       Tokenizer::iterator tokIter = tokens.begin();
       uint32_t idx = 0;
-      for(;tokIter!=tokens.end();++tokIter) ++idx;
+      std::string attr = "";
+      for(;tokIter!=tokens.end();++tokIter) {
+	if (idx == 8) attr = *tokIter;
+	++idx;
+      }
       if (idx >= 9) {
-	std::string attr = *tokIter;
 	std::size_t found = attr.find(c.idname);
 	if (found != std::string::npos) {
 	  bool pCode = false;
