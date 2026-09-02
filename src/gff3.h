@@ -137,6 +137,8 @@ namespace sansa
     dataIn.push(boost::iostreams::gzip_decompressor());
     dataIn.push(file);
     std::istream instream(&dataIn);
+    std::set<std::string> unknownChr;
+    uint64_t skippedFeatures = 0;
     std::string gline;
     while(std::getline(instream, gline)) {
       if ((gline.size()) && (gline[0] == '#')) continue;
@@ -149,7 +151,11 @@ namespace sansa
 	return 0;
       }
       std::string chrName=*tokIter++;
-      if (c.nchr.find(chrName) == c.nchr.end()) continue;
+      if (c.nchr.find(chrName) == c.nchr.end()) {
+	unknownChr.insert(chrName);
+	++skippedFeatures;
+	continue;
+      }
       int32_t chrid = c.nchr.find(chrName)->second;
       if (tokIter == tokens.end()) {
 	std::cerr << "Corrupted GFF3 file!" << std::endl;
@@ -210,6 +216,10 @@ namespace sansa
 	  }
 	}
       }
+    }
+    if (skippedFeatures) {
+      std::cerr << "Warning: " << skippedFeatures << " features on " << unknownChr.size() << " sequences skipped!" << std::endl;
+      std::cerr << "         Check chromosome naming consistency (e.g., 'chr1' vs '1')!" << std::endl;
     }
     if (geneIds.empty()) {
       std::cerr << "No elements found with " << c.feature << "!" << std::endl;
