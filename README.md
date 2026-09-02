@@ -33,6 +33,8 @@ Sansa has several subcommands
 
 `sansa compvcf` to [compare multi-sample VCF files](https://github.com/dellytools/sansa#compare-vcfs)
 
+`sansa somatic` to [filter somatic SVs against a panel of normals (PoN)](https://github.com/dellytools/sansa#somatic-sv-filtering)
+
 ## SV annotation
 
 Download an annotation database. Examples are [gnomAD-SV](https://gnomad.broadinstitute.org/) or [1000 Genomes phase 3](https://www.internationalgenome.org/phase-3-structural-variant-dataset) and then run the annotation.
@@ -133,6 +135,16 @@ Compare an input VCF/BCF file to a ground truth (base) VCF/BCF file.
 To compare SV site lists that lack genotypes, you need to set the minimum allele count to zero (`-e 0`).
 
 `sansa compvcf -a base.bcf -e 0 input.bcf`
+
+## Somatic SV filtering
+
+Given a tumor SV call set and a panel of normals (PoN), `sansa somatic` outputs all somatic SVs that are not present in the PoN.
+
+`sansa somatic -a pon.bcf tumor.bcf`
+
+By default, SVs are only compared within the same SV type. You can ignore the SV type using `--nosvt`.
+
+`sansa somatic --nosvt -a pon.bcf tumor.bcf`
 
 ## Citation
 

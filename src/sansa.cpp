@@ -13,6 +13,7 @@
 #include "version.h"
 #include "annotate.h"
 #include "compvcf.h"
+#include "somatic.h"
 #include "markdup.h"
 
 using namespace sansa;
@@ -26,6 +27,7 @@ displayUsage() {
   std::cerr << "    annotate     annotate VCF file" << std::endl;
   std::cerr << "    markdup      mark duplicate SV sites based on SV allele and GT concordance" << std::endl;
   std::cerr << "    compvcf      compare multi-sample VCF to a ground truth VCF" << std::endl;
+  std::cerr << "    somatic      filter somatic SVs against a panel of normals (PoN)" << std::endl;
   std::cerr << std::endl;
   std::cerr << std::endl;
 }
@@ -64,6 +66,9 @@ int main(int argc, char **argv) {
   }
   else if ((std::string(argv[1]) == "compvcf")) {
     return compvcf(argc-1,argv+1);
+  }
+  else if ((std::string(argv[1]) == "somatic")) {
+    return somatic(argc-1,argv+1);
   }
   std::cerr << "Unrecognized command " << std::string(argv[1]) << std::endl;
   return 1;

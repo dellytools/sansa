@@ -84,6 +84,7 @@ namespace sansa
     float divergence;
     boost::filesystem::path vcffile;
     boost::filesystem::path base;
+    boost::filesystem::path outfile;
     std::string outprefix;
     std::vector<std::string> samples;
     TChrMap chrmap;
