@@ -52,6 +52,7 @@ namespace sansa
     int32_t svt;
     int32_t qual;
     int32_t consBp;
+    int32_t trperiod;
     int32_t score;
     int32_t bestMatchId;
     double gtConc;
@@ -60,8 +61,8 @@ namespace sansa
     std::string allele;
     std::vector<int32_t> gt;
 
-    CompSVRecord() : match(0), tid(0), mtid(0), svStart(0), svEnd(0), svLen(0), svt(0), qual(0), consBp(0), score(0), bestMatchId(0), gtConc(0), nonrefGtConc(0), id(""), allele("") {}
-    CompSVRecord(int32_t const t, int32_t const svS) : match(0), tid(t), mtid(0), svStart(svS), svEnd(0), svLen(0), svt(0), qual(0), consBp(0), score(0), bestMatchId(0), gtConc(0), nonrefGtConc(0), id(""), allele("") {}
+    CompSVRecord() : match(0), tid(0), mtid(0), svStart(0), svEnd(0), svLen(0), svt(0), qual(0), consBp(0), trperiod(0), score(0), bestMatchId(0), gtConc(0), nonrefGtConc(0), id(""), allele("") {}
+    CompSVRecord(int32_t const t, int32_t const svS) : match(0), tid(t), mtid(0), svStart(svS), svEnd(0), svLen(0), svt(0), qual(0), consBp(0), trperiod(0), score(0), bestMatchId(0), gtConc(0), nonrefGtConc(0), id(""), allele("") {}
 
     bool operator<(const CompSVRecord& sv2) const {
       return ((tid<sv2.tid) || ((tid==sv2.tid) && (svStart<sv2.svStart)) || ((tid==sv2.tid) && (svStart==sv2.svStart) && (svEnd<sv2.svEnd)));
@@ -82,6 +83,9 @@ namespace sansa
     int32_t maxac;
     float sizeratio;
     float divergence;
+    int32_t trOffset;
+    float trFrac;
+    float trSeqId;
     boost::filesystem::path vcffile;
     boost::filesystem::path base;
     boost::filesystem::path outfile;
@@ -90,13 +94,84 @@ namespace sansa
     TChrMap chrmap;
   };
 
+  // Rotation
+  inline std::string
+  _minRotation(std::string const& s) {
+    if (s.size() < 2) return s;
+    std::string dbl = s + s;
+    int32_t n = (int32_t) dbl.size();
+    std::vector<int32_t> f(n, -1);
+    int32_t k = 0;
+    for(int32_t j = 1; j < n; ++j) {
+      char sj = dbl[j];
+      int32_t i = f[j - k - 1];
+      while ((i != -1) && (sj != dbl[k + i + 1])) {
+	if (sj < dbl[k + i + 1]) k = j - i - 1;
+	i = f[i];
+      }
+      if (sj != dbl[k + i + 1]) {
+	if (sj < dbl[k]) k = j;
+	f[j - k] = -1;
+      } else f[j - k] = i + 1;
+    }
+    return dbl.substr(k, s.size());
+  }
+
+  // Sequence identity
+  inline double
+  _seqIdentity(std::string const& a, std::string const& b, double const minId) {
+    if ((a.empty()) || (b.empty())) return -1.0;
+    int32_t maxlen = (int32_t) std::max(a.size(), b.size());
+    if (maxlen == 0) return 1.0;
+    int32_t k = -1;
+    if ((minId > 0.0) && (minId < 1.0)) k = (int32_t) ((1.0 - minId) * maxlen);
+    EdlibAlignResult align = edlibAlign(a.c_str(), a.size(), b.c_str(), b.size(), edlibNewAlignConfig(k, EDLIB_MODE_NW, EDLIB_TASK_DISTANCE, NULL, 0));
+    double id;
+    if (align.editDistance >= 0) id = 1.0 - (double) align.editDistance / (double) maxlen;
+    else id = (k >= 0) ? 0.0 : -1.0;
+    edlibFreeAlignResult(align);
+    return id;
+  }
+
+  // Best seq. identity as in delly
+  inline double
+  _bestSeqIdentity(std::string const& a, std::string const& b, int32_t const posOff, double const minId, int32_t const seqCutoff) {
+    if ((a.empty()) || (b.empty())) return -1.0;
+    double best = _seqIdentity(a, b, minId);
+    if ((minId > 0.0) && (best >= minId)) return best;
+    if (((int32_t) a.size() < seqCutoff) && ((int32_t) b.size() < seqCutoff)) {
+      int32_t f = posOff % (int32_t) b.size();
+      if (f > 0) {
+	std::string rot = b.substr(b.size() - f) + b.substr(0, b.size() - f);
+	best = std::max(best, _seqIdentity(a, rot, minId));
+	if ((minId > 0.0) && (best >= minId)) return best;
+      }
+      best = std::max(best, _seqIdentity(_minRotation(a), _minRotation(b), minId));
+    }
+    return best;
+  }
+
   inline void
   compareSVs(CompvcfConfig const& c, std::vector<CompSVRecord>& basesv, std::vector<CompSVRecord>& compsv) {
     typedef std::vector<CompSVRecord> TCompSVType;
     
     std::cerr << '[' << boost::posix_time::to_simple_string(boost::posix_time::second_clock::local_time()) << "] " << "Comparing " << compsv.size() << " SVs with " << basesv.size() << " SVs in the base VCF/BCF file " << std::endl;
+
+    int32_t scanWin = c.bpdiff;
+    int32_t maxPeriod = 0;
+    int32_t maxLen = 0;
     for(uint32_t i = 0; i < basesv.size(); ++i) {
-      int32_t earliestStart = std::max(basesv[i].svStart - (c.bpdiff + 1), 0);
+      if (basesv[i].trperiod > maxPeriod) maxPeriod = basesv[i].trperiod;
+      if (basesv[i].svLen > maxLen) maxLen = basesv[i].svLen;
+    }
+    for(uint32_t j = 0; j < compsv.size(); ++j) {
+      if (compsv[j].trperiod > maxPeriod) maxPeriod = compsv[j].trperiod;
+      if (compsv[j].svLen > maxLen) maxLen = compsv[j].svLen;
+    }
+    scanWin = std::max(scanWin, std::max(c.trOffset, std::max(2 * maxPeriod, (int32_t) (c.trFrac * maxLen))));
+    if (scanWin > 50000) scanWin = 50000;
+    for(uint32_t i = 0; i < basesv.size(); ++i) {
+      int32_t earliestStart = std::max(basesv[i].svStart - (scanWin + 1), 0);
       typename TCompSVType::const_iterator itsv = std::lower_bound(compsv.begin(), compsv.end(), CompSVRecord(basesv[i].tid, earliestStart));
       for(uint32_t j = (itsv - compsv.begin()); j < compsv.size(); ++j) {
 	if (basesv[i].tid < compsv[j].tid) break;  // Sorted by tid
@@ -108,18 +183,28 @@ namespace sansa
 	  }
 	}
 	if (basesv[i].mtid != compsv[j].mtid) continue;
-	if (std::abs(basesv[i].svStart - compsv[j].svStart) > c.bpdiff) {
-	  if ((compsv[j].svStart > basesv[i].svStart) && ((compsv[j].svStart - basesv[i].svStart) > c.bpdiff)) break; // Sorted by tid & svStart
+	// Tandem-repeat?
+	bool isTR = ((basesv[i].trperiod > 0) || (compsv[j].trperiod > 0));
+	int32_t win = c.bpdiff;
+	if (isTR) {
+	  win = std::max(c.bpdiff, std::max(c.trOffset, std::max(2 * std::max(basesv[i].trperiod, compsv[j].trperiod), (int32_t) (c.trFrac * std::max(basesv[i].svLen, compsv[j].svLen)))));
+	  if (win > 50000) win = 50000;
+	}
+	if (std::abs(basesv[i].svStart - compsv[j].svStart) > win) {
+	  if ((compsv[j].svStart > basesv[i].svStart) && ((compsv[j].svStart - basesv[i].svStart) > scanWin)) break;
 	  continue;
 	}
-	if (std::abs(basesv[i].svEnd - compsv[j].svEnd) > c.bpdiff) continue;
-	float bprat = 1 - (float) std::max(std::abs(basesv[i].svStart - compsv[j].svStart), std::abs(basesv[i].svEnd - compsv[j].svEnd)) / (float) (c.bpdiff);
+	if (std::abs(basesv[i].svEnd - compsv[j].svEnd) > win) continue;
+	float bprat = 1 - (float) std::max(std::abs(basesv[i].svStart - compsv[j].svStart), std::abs(basesv[i].svEnd - compsv[j].svEnd)) / (float) (win);
 	float sizerat = 1;
 	if ((basesv[i].svLen) && (compsv[j].svLen)) {
 	  sizerat = (float) basesv[i].svLen / (float) compsv[j].svLen;
 	  if (basesv[i].svLen > compsv[j].svLen) sizerat = (float) compsv[j].svLen / (float) basesv[i].svLen;
 	}
-	if (sizerat < c.sizeratio) continue;
+	
+	// Tandem repeats are matched on position and sequence
+	if ((!isTR) && (sizerat < c.sizeratio)) continue;
+	
 	// Check SV similarity
 	float scorerat = 0;
 	if ((!basesv[i].allele.empty()) && (!compsv[j].allele.empty())) {
@@ -131,8 +216,14 @@ namespace sansa
 	  //printAlignment(seqI, seqJ, EDLIB_MODE_NW, cigar);
 	  double score = (double) cigar.editDistance / (double) (leftOffset + rightOffset);
 	  edlibFreeAlignResult(cigar);
-	  if (score > c.divergence) continue;
+	  if (score > c.divergence) {
+	    double minId = isTR ? c.trSeqId : (1.0 - c.divergence);
+	    double bestId = _bestSeqIdentity(basesv[i].allele, compsv[j].allele, std::abs(basesv[i].svStart - compsv[j].svStart), minId, 1000);
+	    if ((bestId < 0) || (bestId < minId)) continue;
+	    score = 1.0 - bestId;
+	  }
 	  scorerat = 1 - score / c.divergence;
+	  if (scorerat < 0) scorerat = 0;
 	}
 	// Match
 	++basesv[i].match;
@@ -408,6 +499,8 @@ namespace sansa
 	sv.svLen = svLenVal;
 	sv.svt = _decodeOrientation(ctVal, svtVal);
 	sv.qual = qualVal;
+	sv.trperiod = 0;
+	_parse_bcf_int32(hdr, rec, "TRPERIOD", sv.trperiod);
 
 	// Check genotypes
 	bcf_unpack(rec, BCF_UN_ALL);
@@ -570,6 +663,9 @@ namespace sansa
       ("pass,p", "Filter sites for PASS")
       ("ignore,i", "Ignore duplicate IDs")
       ("ct,c", "Require matching CT value in addition to SV type")
+      ("troffset", boost::program_options::value<int32_t>(&c.trOffset)->default_value(200), "tandem repeat max. breakpoint offset")
+      ("trfrac", boost::program_options::value<float>(&c.trFrac)->default_value(0.25), "tandem repeat window as fraction of SV size")
+      ("trseqid", boost::program_options::value<float>(&c.trSeqId)->default_value(0.7), "min. tandem repeat sequence identity")
       ;
     
     // Define hidden options
