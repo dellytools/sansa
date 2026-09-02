@@ -208,7 +208,7 @@ namespace sansa
     else if (pos2val != -1) return pos2val;
     else if (endval != -1) return endval;
     else {
-      if (svtval == "INS") return rec->pos + 2;
+      if (svtval == "INS") return rec->pos + 1;
       if (svtval == "DEL") {
 	std::string refAllele = rec->d.allele[0];
 	std::string altAllele = rec->d.allele[1];
