@@ -107,7 +107,16 @@ namespace sansa
     
     // Load bcf file
     htsFile* ifile = hts_open(c.vcffile.string().c_str(), "r");
+    if (ifile == NULL) {
+      std::cerr << "Fail to load " << c.vcffile.string() << std::endl;
+      return false;
+    }
     bcf_hdr_t* hdr = bcf_hdr_read(ifile);
+    if (hdr == NULL) {
+      std::cerr << "Fail to read header of " << c.vcffile.string() << std::endl;
+      bcf_close(ifile);
+      return false;
+    }
 
     // VCF fields
     int32_t nsvend = 0;
@@ -288,7 +297,16 @@ namespace sansa
 
     // Load bcf file
     htsFile* ifile = hts_open(c.vcffile.string().c_str(), "r");
+    if (ifile == NULL) {
+      std::cerr << "Fail to load " << c.vcffile.string() << std::endl;
+      return false;
+    }
     bcf_hdr_t* hdr = bcf_hdr_read(ifile);
+    if (hdr == NULL) {
+      std::cerr << "Fail to read header of " << c.vcffile.string() << std::endl;
+      bcf_close(ifile);
+      return false;
+    }
 
     // Open output VCF file
     std::string fmtout = "wb";
@@ -394,14 +412,11 @@ namespace sansa
 	  }
 	}
 	// Normalize
-	if ((gqsum1 == 0) && (gqsum2 == 0)) {
-	  // Use QUAL
-	  gqsum1 = allsv[i].qual;
-	  gqsum2 = allsv[j].qual;
-	} else {
-	  gqsum1 /= (double) gqn1;
-	  gqsum2 /= (double) gqn2;
-	}
+	// Average GQ of carriers, or fall back to site QUAL when a side has no GQ carriers
+	if (gqn1 > 0) gqsum1 /= (double) gqn1;
+	else gqsum1 = allsv[i].qual;
+	if (gqn2 > 0) gqsum2 /= (double) gqn2;
+	else gqsum2 = allsv[j].qual;
 
 	// Mark as duplicate
 	// Debug

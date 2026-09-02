@@ -65,7 +65,16 @@ namespace sansa
       htsFile* ifile = NULL;
       if (k == 0) ifile = bcf_open(c.db.string().c_str(), "r");
       else ifile = bcf_open(c.infile.string().c_str(), "r");
+      if (ifile == NULL) {
+        std::cerr << "Fail to load " << (k == 0 ? c.db.string() : c.infile.string()) << std::endl;
+        return 1;
+      }
       bcf_hdr_t* hdr = bcf_hdr_read(ifile);
+      if (hdr == NULL) {
+        std::cerr << "Fail to read header of " << (k == 0 ? c.db.string() : c.infile.string()) << std::endl;
+        bcf_close(ifile);
+        return 1;
+      }
       int32_t nseq=0;
       const char** seqnames = bcf_hdr_seqnames(hdr, &nseq);
       for(int32_t i = 0; i<nseq;++i) {

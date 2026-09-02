@@ -60,8 +60,8 @@ namespace sansa
     std::string allele;
     std::vector<int32_t> gt;
 
-    CompSVRecord() : match(0), tid(0), svStart(0), svEnd(0), svLen(0), svt(0), qual(0), consBp(0), score(0), bestMatchId(0), gtConc(0), nonrefGtConc(0), id(""), allele("") {}
-    CompSVRecord(int32_t const t, int32_t const svS) : match(0), tid(t), svStart(svS), svEnd(0), svLen(0), svt(0), qual(0), consBp(0), score(0), bestMatchId(0), gtConc(0), nonrefGtConc(0), id(""), allele("") {}
+    CompSVRecord() : match(0), tid(0), mtid(0), svStart(0), svEnd(0), svLen(0), svt(0), qual(0), consBp(0), score(0), bestMatchId(0), gtConc(0), nonrefGtConc(0), id(""), allele("") {}
+    CompSVRecord(int32_t const t, int32_t const svS) : match(0), tid(t), mtid(0), svStart(svS), svEnd(0), svLen(0), svt(0), qual(0), consBp(0), score(0), bestMatchId(0), gtConc(0), nonrefGtConc(0), id(""), allele("") {}
 
     bool operator<(const CompSVRecord& sv2) const {
       return ((tid<sv2.tid) || ((tid==sv2.tid) && (svStart<sv2.svStart)) || ((tid==sv2.tid) && (svStart==sv2.svStart) && (svEnd<sv2.svEnd)));
@@ -170,7 +170,16 @@ namespace sansa
     
     // Load bcf file
     htsFile* ifile = hts_open(filename.c_str(), "r");
+    if (ifile == NULL) {
+      std::cerr << "Fail to load " << filename << std::endl;
+      return false;
+    }
     bcf_hdr_t* hdr = bcf_hdr_read(ifile);
+    if (hdr == NULL) {
+      std::cerr << "Fail to read header of " << filename << std::endl;
+      bcf_close(ifile);
+      return false;
+    }
 
     // VCF fields
     int32_t nsvend = 0;
@@ -226,6 +235,7 @@ namespace sansa
       }
 
       // Symbolic ALT?
+      if (rec->n_allele < 2) continue;
       std::string refAllele = rec->d.allele[0];
       std::string altAllele = rec->d.allele[1];
       std::string altSymbol = "NA";
@@ -300,6 +310,11 @@ namespace sansa
 	    found = altAllele.find(']', found+1);
 	  }
 	  std::sort(posBND.begin(), posBND.end());
+	  if (posBND.size() < 2) {
+	    std::cerr << "Error: Malformed BND ALT allele " << rec->d.allele[1] << std::endl;
+	    success = false;
+	    continue;
+	  }
 	  altAllele = altAllele.substr(posBND[0] + 1, posBND[1] - posBND[0] - 1);
 	  found = altAllele.find(':');
 	  if (found!=std::string::npos) {

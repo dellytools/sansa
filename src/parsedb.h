@@ -30,14 +30,29 @@ namespace sansa
       return false;
     }
     bcf_hdr_t* hdr = bcf_hdr_read(ifile);
-    
+    if (hdr == NULL) {
+      std::cerr << "Fail to read header of " << c.db.string() << std::endl;
+      bcf_close(ifile);
+      return false;
+    }
+
     // Open output VCF file
     htsFile *ofile = hts_open(c.annofile.string().c_str(), "wb");
+    if (ofile == NULL) {
+      std::cerr << "Fail to open output file " << c.annofile.string() << std::endl;
+      bcf_hdr_destroy(hdr);
+      bcf_close(ifile);
+      return false;
+    }
     bcf_hdr_t *hdr_out = bcf_hdr_dup(hdr);
     bcf_hdr_remove(hdr_out, BCF_HL_INFO, "ANNOID");
     bcf_hdr_append(hdr_out, "##INFO=<ID=ANNOID,Number=1,Type=String,Description=\"Annotation ID that links query SVs to database SVs.\">");
     if (bcf_hdr_write(ofile, hdr_out) != 0) {
       std::cerr << "Error: Failed to write BCF header!" << std::endl;
+      bcf_hdr_destroy(hdr_out);
+      bcf_hdr_destroy(hdr);
+      hts_close(ofile);
+      bcf_close(ifile);
       return false;
     }
 

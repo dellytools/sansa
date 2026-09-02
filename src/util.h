@@ -304,6 +304,7 @@ namespace sansa
 	if ((gt1[k] != 0) && (gt2[k] != 0)) ++carshared;
       }
     }
+    if (carnum == 0) return 0;
     return (double) (carshared) / (double) (carnum);
   }
 
@@ -317,6 +318,7 @@ namespace sansa
 	if (gt1[k] == gt2[k]) ++matchgt;
       }
     }
+    if (totgt == 0) return 0;
     return (double) (matchgt) / (double) (totgt);
   }
   
@@ -328,6 +330,7 @@ namespace sansa
       ++totgt;
       if (gt1[k] == gt2[k]) ++matchgt;
     }
+    if (totgt == 0) return 0;
     return (double) (matchgt) / (double) (totgt);
   }
   
