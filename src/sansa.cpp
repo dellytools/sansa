@@ -27,7 +27,7 @@ displayUsage() {
   std::cerr << "    annotate     annotate VCF file" << std::endl;
   std::cerr << "    markdup      mark duplicate SV sites based on SV allele and GT concordance" << std::endl;
   std::cerr << "    compvcf      compare multi-sample VCF to a ground truth VCF" << std::endl;
-  std::cerr << "    somatic      filter somatic SVs against a panel of normals (PoN)" << std::endl;
+  std::cerr << "    somatic      filter SVs against a panel of normals (PoN)" << std::endl;
   std::cerr << std::endl;
   std::cerr << std::endl;
 }

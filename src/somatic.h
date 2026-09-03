@@ -101,12 +101,12 @@ namespace sansa
       ("bpdiff,b", boost::program_options::value<int32_t>(&c.bpdiff)->default_value(1000), "max. SV breakpoint offset")
       ("sizeratio,s", boost::program_options::value<float>(&c.sizeratio)->default_value(0.5), "min. SV size ratio")
       ("divergence,d", boost::program_options::value<float>(&c.divergence)->default_value(0.3), "max. SV allele divergence")
+      ("troffset", boost::program_options::value<int32_t>(&c.trOffset)->default_value(200), "tandem repeat max. breakpoint offset")
+      ("trfrac", boost::program_options::value<float>(&c.trFrac)->default_value(0.25), "tandem repeat fraction")
+      ("trseqid", boost::program_options::value<float>(&c.trSeqId)->default_value(0.7), "min. tandem repeat seq. identity")
       ("nosvt,t", "ignore the SV type")
       ("pass,p", "filter sites for PASS")
       ("ct,c", "require matching CT value in addition to SV type")
-      ("troffset", boost::program_options::value<int32_t>(&c.trOffset)->default_value(200), "tandem repeat max. breakpoint offset")
-      ("trfrac", boost::program_options::value<float>(&c.trFrac)->default_value(0.25), "tandem repeat window as fraction of SV size")
-      ("trseqid", boost::program_options::value<float>(&c.trSeqId)->default_value(0.7), "min. tandem repeat sequence identity")
       ;
 
     // Define hidden options
