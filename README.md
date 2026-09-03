@@ -161,6 +161,6 @@ Bioinformatics. 2012 Sep 15;28(18):i333-i339.
 
 ## License
 
-Sansa is distributed under the BSD 3-Clause license. Consult the accompanying [LICENSE](https://github.com/dellytools/sansa/blob/master/LICENSE) file for more details.
+Sansa is distributed under the BSD 3-Clause license. Consult the accompanying [LICENSE](https://github.com/dellytools/sansa/blob/main/LICENSE) file for more details.
 
 
